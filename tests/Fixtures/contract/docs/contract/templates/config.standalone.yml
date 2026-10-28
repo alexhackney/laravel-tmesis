@@ -1,0 +1,125 @@
+# Tmesis node config. Written once by the installer; yours to edit after that.
+#
+# Every setting is a plain value in this file. Only SECRETS are braced names, read from
+# /etc/tmesis/.env (0600, root) through systemd and interpolated at load (v0.8.0,
+# decision D9): .env holds secrets and nothing else. An unset variable with no fallback
+# is a hard error, never an empty string.
+
+node:
+  # name defaults to the hostname when omitted.
+  role: standalone
+  data_dir: /var/lib/tmesis
+  log_level: info
+
+ingest:
+  # app is the RTMP path segment a publisher addresses: rtmp://<box>:1935/src.
+  # It is written out rather than left to the Go default so the file an operator
+  # reads names the app the box actually serves. install.sh's summary and this
+  # stanza are asserted against each other by TestInstallerSummaryMatchesSeededConfig.
+  rtmp: { listen: ":1935", app: src }
+  # latency_ms is the SRT receive latency FLOOR (120 is SRT's default; a publisher's
+  # own latency= can only raise it): the window a lost packet's retransmission has to
+  # arrive in. A VPN or WAN path wants 500 to 1000. The proof it is too short is
+  # ingest.ts_cc_errors_total on the stream's stats route, or "ts errors" on
+  # tmesis watch: holes the encoder was actually handed.
+  srt:  { listen: ":6001", latency_ms: 120 }
+  keys:
+    # OPEN KEY POSTURE. This node accepts ANY stream token, minted or not.
+    #
+    # Anyone who can reach the ingest port can publish. Seeded ON by the installer
+    # (Alex, 2026-09-14, final plan 11.27): until the edges and origins are switched
+    # over and the control plane's verify hook (ingest.verify_hook) is in place, the
+    # risk is accepted so that any encoder can be pointed at a fresh box. Set it to
+    # false to require the minted key below; doctor's "key posture" row says which
+    # posture this box is in.
+    open: true
+    verify_secrets:
+      - kid: "install"
+        secret: ${TMESIS_STREAM_KEY_SECRET}
+
+encode:
+  ffmpeg: /opt/tmesis/current/ffmpeg
+  default_ladder: broadcast-720p
+  ladders:
+    broadcast-720p:
+      segment_seconds: 6
+      rungs:
+        - { name: 720p,  width: 1280, height: 720, fps: "60000/1001", v_kbps: 3500, preset: veryfast }
+        - { name: 480p,  width: 854,  height: 480, fps: "30000/1001", v_kbps: 1400, preset: veryfast }
+        - { name: audio, audio_only: true }
+      audio: { codec: aac, rate: 48000, a_kbps: 128, normalize: true }
+
+delivery:
+  # Origin mode: this box serves HLS itself. A domain turns on auto-TLS on 80 and
+  # 443 (install.sh --domain writes it here); without one it serves plain HTTP on
+  # 8080, which is what a box behind a TLS-terminating CDN wants.
+  # mode both serves AND uploads the live output to live_destination, which must name
+  # a storage.destinations entry (the `live` one below); an empty live_destination is
+  # unset in origin mode (docs/CONFIG.md, delivery).
+  mode: origin
+  live_destination: ""
+  origin:
+    # No viewer-token key: Fastly enforces viewer authorization at the CDN edge,
+    # and the node validates publish keys only (final plan 5.4). The loader reads
+    # config with KnownFields set, so adding one back is a boot failure.
+    # The box's own delivery name; empty is plain HTTP delivery with no ACME.
+    domain: ""  # the delivery name: install.sh --domain writes it here
+    listen_http: ":8080"
+
+# The live destination a both-mode box uploads to (docs/CONFIG.md 6.16, decision #147).
+# An entry with bucket, region, credentials, endpoint and prefix all empty is INERT
+# (dropped at load), as is a profile with neither key, so as shipped this block does
+# nothing: nothing is guessed. To upload, set five values: delivery.mode both,
+# delivery.live_destination live, and bucket, region and credentials (live) below, then
+# put the two keys in /etc/tmesis/.env as TMESIS_LIVE_ACCESS_KEY and
+# TMESIS_LIVE_SECRET_KEY. endpoint is the provider's HOST only for Fastly, B2, R2 and
+# S3 (a path that repeats the bucket writes every key under <bucket>/); empty is AWS
+# regional resolution. A half-filled entry or profile is refused, field by field.
+storage:
+  destinations:
+    live:
+      bucket: ""
+      region: ""
+      endpoint: ""
+      prefix: ""
+      credentials: ""
+  credentials:
+    live:
+      access_key: "${TMESIS_LIVE_ACCESS_KEY:-}"
+      secret_key: "${TMESIS_LIVE_SECRET_KEY:-}"
+
+# The ingest copy (docs/CONFIG.md 6.6): every publish is recorded byte for byte under
+# <data_dir>/artifacts/<generation>/ and kept until it is explicitly released; retention_hours (72) is the earliest a released recording may be retired, counted from registration. Give it
+# an absolute directory destination to copy each finished file there first, or a
+# destination_ref naming a storage destination (docs/CONFIG.md 6.16) for a bucket. `dvr: { capture, retention_hours }` is an alias of these keys.
+recording:
+  ingest: { enabled: true, retention_hours: 72, destination: "" }
+
+relays: []
+
+# The low-delay preview (docs/CONFIG.md 6.15): a dedicated H.264 plus Opus encode of
+# every live feed over WHEP on its own listener. OPEN, no token: scope 8889/tcp,
+# 8189/udp and 8189/tcp to producer networks. Set public_url to what a producer's
+# browser reaches this box on (https://<host>:8889) once the firewall rule is in.
+preview:
+  enabled: true
+  max_monitors: 50
+  listen: ":8889"
+  public_url: ""
+  encode: { width: 854, height: 480, fps: 30, video_kbps: 1000, audio_kbps: 64, preset: veryfast }
+  ice: { udp_listen: ":8189", tcp_listen: ":8189", public_ips: [] }
+
+# The admin API. Loopback as shipped. TLS (docs/DEPLOY.md section 7): tls.domain for a
+# box with a public name and 80 and 443 open, else the cert_file and key_file pair. All
+# three empty is plain HTTP; never both ways.
+api:
+  listen: "127.0.0.1:7000"
+  admin_token: ${TMESIS_ADMIN_TOKEN}
+  tls:
+    domain: ""
+    cert_file: ""
+    key_file: ""
+
+limits:
+  disk_floor_gb: 5
+  max_streams: 0

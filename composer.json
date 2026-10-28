@@ -1,0 +1,74 @@
+{
+    "name": "alexhackney/laravel-tmesis",
+    "description": "Laravel control-plane client and reference receiver for the Tmesis media node contract",
+    "keywords": ["laravel", "tmesis", "srt", "rtmp", "hls", "streaming", "webhooks", "media"],
+    "homepage": "https://github.com/alexhackney/laravel-tmesis",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Alex Hackney",
+            "email": "alex@alexhackney.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/alexhackney/laravel-tmesis/issues",
+        "source": "https://github.com/alexhackney/laravel-tmesis"
+    },
+    "require": {
+        "php": "^8.3|^8.4|^8.5",
+        "illuminate/cache": "^12.0|^13.0",
+        "illuminate/console": "^12.0|^13.0",
+        "illuminate/contracts": "^12.0|^13.0",
+        "illuminate/database": "^12.0|^13.0",
+        "illuminate/events": "^12.0|^13.0",
+        "illuminate/http": "^12.0|^13.0",
+        "illuminate/routing": "^12.0|^13.0",
+        "illuminate/support": "^12.0|^13.0",
+        "symfony/uid": "^7.2|^8.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.11",
+        "laravel/pint": "^1.0",
+        "opis/json-schema": "^2.3",
+        "orchestra/testbench": "^10.0|^11.0",
+        "orchestra/workbench": "^10.0|^11.0",
+        "pestphp/pest": "^4.0",
+        "symfony/process": "^7.0|^8.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "AlexHackney\\Tmesis\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AlexHackney\\Tmesis\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/"
+        }
+    },
+    "scripts": {
+        "analyse": "phpstan analyse --memory-limit=1G",
+        "format": "pint",
+        "lint": "pint --test",
+        "repin": "@php bin/repin",
+        "test": "pest"
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "AlexHackney\\Tmesis\\TmesisServiceProvider"
+            ],
+            "aliases": {
+                "Tmesis": "AlexHackney\\Tmesis\\Facades\\Tmesis"
+            }
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

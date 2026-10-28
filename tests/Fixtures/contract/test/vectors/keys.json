@@ -1,0 +1,354 @@
+{
+  "version": 1,
+  "kind": "tmesis.stream-key-vectors",
+  "readme": [
+    "Shared HMAC test vectors for Tmesis stream keys (final plan 6.4, docs/TESTING.md 1.4).",
+    "",
+    "WHY THIS FILE EXISTS. Two implementations must agree byte for byte: tsp-web MINTS",
+    "stream keys and Tmesis only VERIFIES them. A disagreement about the signed string,",
+    "the encoding, or the hex case rejects every publish on the platform. Both sides",
+    "assert against THIS file: internal/keys/vectors_test.go reads it in Go, and a key",
+    "minter in any other language reads the same rows.",
+    "",
+    "THE RULE THAT MAKES IT WORK. The fixture is generated from the Go implementation",
+    "(go test ./internal/keys -update) and a client NEVER edits it. A client that cannot",
+    "reproduce a row has a bug, and that is the finding, not a reason to adjust the",
+    "expected value. A shared fixture either side may rewrite is not a contract, it is a",
+    "diary.",
+    "",
+    "HOW TO USE IT. For every entry in cases[]: decode secret_hex to bytes, build the",
+    "signed string as stream + \".\" + epoch, compute HMAC-SHA256 over it, hex encode",
+    "lowercase, and assert the result equals mac and that stream + \".\" + epoch + \".\" +",
+    "mac equals key. For every entry in negative[]: assert your parser or verifier",
+    "rejects key with the stated error class (malformed is decided from the shape alone;",
+    "bad_signature rows parse cleanly and fail the signature check against secret_hex).",
+    "",
+    "ENCODING NOTES. secret_hex is authoritative and is the only form that can carry a",
+    "secret which is not valid UTF-8; secret_utf8 appears only when the bytes happen to",
+    "be valid UTF-8 and is informational. epoch is a JSON number and epoch_string is the",
+    "same value as a decimal string: read epoch_string in any language whose JSON parser",
+    "cannot hold an exact int64.",
+    "",
+    "None of the secrets in this file are real. Do not use one for anything."
+  ],
+  "format": {
+    "key": "<stream>.<epoch>.<mac>",
+    "signed_string": "stream + \".\" + epoch, with nothing else: no trailing newline, no length prefix, no separator after the epoch",
+    "mac": "hex(HMAC-SHA256(secret, signed_string)), lowercase, the full 64 characters",
+    "split": "on the last two dots. The stream id charset forbids a dot, so a key with more than three fields is malformed rather than reinterpreted",
+    "stream_id": "^[a-z0-9][a-z0-9_-]{0,127}$ (docs/API.md section 8.1). It becomes the delivery prefix, so it is validated as a path component",
+    "epoch": "the KEY epoch: base 10, unsigned, no leading zeros, no sign, and it must fit an int64"
+  },
+  "cases": [
+    {
+      "name": "the docs/API.md section 8.1 worked example",
+      "secret_utf8": "sk_tmesis_docs_example",
+      "secret_hex": "736b5f746d657369735f646f63735f6578616d706c65",
+      "stream": "show-2041-main",
+      "epoch": 7,
+      "epoch_string": "7",
+      "signed": "show-2041-main.7",
+      "mac": "a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "key": "show-2041-main.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2"
+    },
+    {
+      "name": "typical show key",
+      "secret_utf8": "sk_tmesis_vectors_ascii",
+      "secret_hex": "736b5f746d657369735f766563746f72735f6173636969",
+      "stream": "show-2041-main",
+      "epoch": 1756400000,
+      "epoch_string": "1756400000",
+      "signed": "show-2041-main.1756400000",
+      "mac": "2674387db2980c43f4bdf978c34977f37aa80d9a35da4b0607998cf028cc85ad",
+      "key": "show-2041-main.1756400000.2674387db2980c43f4bdf978c34977f37aa80d9a35da4b0607998cf028cc85ad"
+    },
+    {
+      "name": "single character stream id",
+      "secret_utf8": "sk_tmesis_vectors_ascii",
+      "secret_hex": "736b5f746d657369735f766563746f72735f6173636969",
+      "stream": "a",
+      "epoch": 1,
+      "epoch_string": "1",
+      "signed": "a.1",
+      "mac": "2635803a319559f6b0c44191a9430509d7815845900c8cf7021cd8a67ddb967a",
+      "key": "a.1.2635803a319559f6b0c44191a9430509d7815845900c8cf7021cd8a67ddb967a"
+    },
+    {
+      "name": "stream id starting with a digit",
+      "secret_utf8": "sk_tmesis_vectors_ascii",
+      "secret_hex": "736b5f746d657369735f766563746f72735f6173636969",
+      "stream": "2041-main",
+      "epoch": 3,
+      "epoch_string": "3",
+      "signed": "2041-main.3",
+      "mac": "1231b05c3da6f843be500805fbb92fc4b171b7d58f9f18b5b724b74bd2fa36fc",
+      "key": "2041-main.3.1231b05c3da6f843be500805fbb92fc4b171b7d58f9f18b5b724b74bd2fa36fc"
+    },
+    {
+      "name": "stream id with underscores and digits",
+      "secret_utf8": "sk_tmesis_vectors_ascii",
+      "secret_hex": "736b5f746d657369735f766563746f72735f6173636969",
+      "stream": "tenant_42_cam_a",
+      "epoch": 12,
+      "epoch_string": "12",
+      "signed": "tenant_42_cam_a.12",
+      "mac": "f3bc603093a04799ef60dc68e154174a345463164a27db2c40e797103626443a",
+      "key": "tenant_42_cam_a.12.f3bc603093a04799ef60dc68e154174a345463164a27db2c40e797103626443a"
+    },
+    {
+      "name": "stream id at the 128 character cap",
+      "secret_utf8": "sk_tmesis_vectors_ascii",
+      "secret_hex": "736b5f746d657369735f766563746f72735f6173636969",
+      "stream": "s012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789abcdefg",
+      "epoch": 1,
+      "epoch_string": "1",
+      "signed": "s012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789abcdefg.1",
+      "mac": "3f7d1970001bb49d54c933d60dfe238e01cae8d3539e8391f924b62947c21a27",
+      "key": "s012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789abcdefg.1.3f7d1970001bb49d54c933d60dfe238e01cae8d3539e8391f924b62947c21a27"
+    },
+    {
+      "name": "epoch zero",
+      "secret_utf8": "sk_tmesis_docs_example",
+      "secret_hex": "736b5f746d657369735f646f63735f6578616d706c65",
+      "stream": "show-1",
+      "epoch": 0,
+      "epoch_string": "0",
+      "signed": "show-1.0",
+      "mac": "c0d794a20e125bd82b4feebbf0a3a6a5d32ba0cef78883d4c5158a99a0187bd8",
+      "key": "show-1.0.c0d794a20e125bd82b4feebbf0a3a6a5d32ba0cef78883d4c5158a99a0187bd8"
+    },
+    {
+      "name": "epoch at the int64 ceiling",
+      "secret_utf8": "sk_tmesis_docs_example",
+      "secret_hex": "736b5f746d657369735f646f63735f6578616d706c65",
+      "stream": "show-1",
+      "epoch": 9223372036854775807,
+      "epoch_string": "9223372036854775807",
+      "signed": "show-1.9223372036854775807",
+      "mac": "e6152e0d9b6bf182a049f23b81e0d032c3c4e868f9d243bda4f423ecf1154c65",
+      "key": "show-1.9223372036854775807.e6152e0d9b6bf182a049f23b81e0d032c3c4e868f9d243bda4f423ecf1154c65"
+    },
+    {
+      "name": "secret with bytes that are not valid UTF-8",
+      "secret_hex": "00010280fefdff7f",
+      "stream": "show-2041-main",
+      "epoch": 7,
+      "epoch_string": "7",
+      "signed": "show-2041-main.7",
+      "mac": "15e7c6f0d29733fa11e86ca3403a2a7307aa5c01029be687de4260dbd7393330",
+      "key": "show-2041-main.7.15e7c6f0d29733fa11e86ca3403a2a7307aa5c01029be687de4260dbd7393330"
+    },
+    {
+      "name": "unicode secret with a codepoint above the BMP",
+      "secret_utf8": "sécret-clé-日本語-🔑",
+      "secret_hex": "73c3a9637265742d636cc3a92de697a5e69cace8aa9e2df09f9491",
+      "stream": "show-unicode-secret",
+      "epoch": 42,
+      "epoch_string": "42",
+      "signed": "show-unicode-secret.42",
+      "mac": "4dc91ba117fd31c27dc7ac214e95349adeb3af7e352bca76e8480c210377903f",
+      "key": "show-unicode-secret.42.4dc91ba117fd31c27dc7ac214e95349adeb3af7e352bca76e8480c210377903f"
+    },
+    {
+      "name": "secret longer than the HMAC block size",
+      "secret_utf8": "sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_sk_long_",
+      "secret_hex": "736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f736b5f6c6f6e675f",
+      "stream": "show-long-secret",
+      "epoch": 5,
+      "epoch_string": "5",
+      "signed": "show-long-secret.5",
+      "mac": "e91f1ea23dd2289d39881a7f5e0a545cea4faacee6d4db132795f5bda8d04f1b",
+      "key": "show-long-secret.5.e91f1ea23dd2289d39881a7f5e0a545cea4faacee6d4db132795f5bda8d04f1b"
+    },
+    {
+      "name": "single NUL byte secret",
+      "secret_utf8": "\u0000",
+      "secret_hex": "00",
+      "stream": "show-nul-secret",
+      "epoch": 6,
+      "epoch_string": "6",
+      "signed": "show-nul-secret.6",
+      "mac": "8867cbf348fe682814e83de9ece04cfc679fa3e8551f07bd1f1b074d964b5108",
+      "key": "show-nul-secret.6.8867cbf348fe682814e83de9ece04cfc679fa3e8551f07bd1f1b074d964b5108"
+    }
+  ],
+  "negative": [
+    {
+      "name": "empty string",
+      "key": "",
+      "error": "malformed",
+      "reason": "an empty key is not three fields"
+    },
+    {
+      "name": "no dots at all",
+      "key": "show-2041-main",
+      "error": "malformed",
+      "reason": "one field, want three"
+    },
+    {
+      "name": "only one dot",
+      "key": "show-2041-main.7",
+      "error": "malformed",
+      "reason": "two fields, want three"
+    },
+    {
+      "name": "a dot in the stream id, which would be four fields",
+      "key": "show.2041-main.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the stream id charset forbids a dot, which is what keeps the split unambiguous"
+    },
+    {
+      "name": "trailing dot leaves an empty mac",
+      "key": "show-2041-main.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2.",
+      "error": "malformed",
+      "reason": "the last field must be the mac"
+    },
+    {
+      "name": "empty stream id",
+      "key": ".7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the stream id is empty"
+    },
+    {
+      "name": "consecutive dots",
+      "key": "show..7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "an empty field is never valid"
+    },
+    {
+      "name": "uppercase stream id",
+      "key": "Show-2041-main.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the stream id is lowercase only: object stores disagree about whether Show-1 and show-1 are one prefix or two"
+    },
+    {
+      "name": "stream id with a leading dash",
+      "key": "-show-2041.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "a value that reaches a command line must not look like a flag"
+    },
+    {
+      "name": "stream id with a forward slash",
+      "key": "shows/one.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the stream id is a single path component and must not be able to add another"
+    },
+    {
+      "name": "stream id with parent directory traversal",
+      "key": "shows/../etc.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the stream id becomes an output prefix"
+    },
+    {
+      "name": "stream id with a space",
+      "key": "show 2041.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "outside the charset"
+    },
+    {
+      "name": "stream id with a NUL byte",
+      "key": "show\u00002041.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "control characters reach logs, manifests, and object keys"
+    },
+    {
+      "name": "stream id with non-ASCII bytes",
+      "key": "shôw-2041.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "outside the charset"
+    },
+    {
+      "name": "stream id one byte over the 128 character cap",
+      "key": "s012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789abcdefgz.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the cap is 128 characters"
+    },
+    {
+      "name": "empty epoch",
+      "key": "show-2041-main..a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the epoch is empty"
+    },
+    {
+      "name": "non-numeric epoch",
+      "key": "show-2041-main.seven.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the epoch is base 10 digits only"
+    },
+    {
+      "name": "negative epoch",
+      "key": "show-2041-main.-7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the epoch is unsigned"
+    },
+    {
+      "name": "explicitly signed epoch",
+      "key": "show-2041-main.+7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the epoch carries no sign, not even a plus"
+    },
+    {
+      "name": "epoch with a leading zero",
+      "key": "show-2041-main.07.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "one epoch value must have exactly one spelling, or the mac covers a string the verifier cannot reproduce"
+    },
+    {
+      "name": "epoch one above the int64 ceiling",
+      "key": "show-2041-main.9223372036854775808.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the epoch must fit an int64"
+    },
+    {
+      "name": "epoch of twenty digits",
+      "key": "show-2041-main.99999999999999999999.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "malformed",
+      "reason": "the epoch must fit an int64"
+    },
+    {
+      "name": "mac truncated by one character",
+      "key": "show-2041-main.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff",
+      "error": "malformed",
+      "reason": "the mac is exactly 64 characters: a truncated mac is a weaker mac"
+    },
+    {
+      "name": "mac one character too long",
+      "key": "show-2041-main.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2f",
+      "error": "malformed",
+      "reason": "the mac is exactly 64 characters"
+    },
+    {
+      "name": "uppercase hex mac",
+      "key": "show-2041-main.7.A5E453FF6BB7EC27302C611F2CAA4BEF986759B280388BCD3D8EE0E829E32FF2",
+      "error": "malformed",
+      "reason": "hex is lowercase: case folding would give one mac two valid spellings"
+    },
+    {
+      "name": "non-hex mac",
+      "key": "show-2041-main.7.gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg",
+      "error": "malformed",
+      "reason": "the mac is hex"
+    },
+    {
+      "name": "mac minted with a different secret",
+      "key": "show-2041-main.7.41159e9c7b86013414903858474cb07157312da2f755a2b3e213352a1a4d17dd",
+      "error": "bad_signature",
+      "reason": "correct length lowercase hex, wrong bytes: this is the row that exercises the constant time compare",
+      "secret_hex": "736b5f746d657369735f646f63735f6578616d706c65"
+    },
+    {
+      "name": "mac lifted from another epoch of the same stream",
+      "key": "show-2041-main.8.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "bad_signature",
+      "reason": "the epoch is part of the signed string, so an old mac does not survive a key epoch rotation",
+      "secret_hex": "736b5f746d657369735f646f63735f6578616d706c65"
+    },
+    {
+      "name": "mac lifted from another stream",
+      "key": "show-2041-other.7.a5e453ff6bb7ec27302c611f2caa4bef986759b280388bcd3d8ee0e829e32ff2",
+      "error": "bad_signature",
+      "reason": "the stream id is part of the signed string",
+      "secret_hex": "736b5f746d657369735f646f63735f6578616d706c65"
+    }
+  ]
+}

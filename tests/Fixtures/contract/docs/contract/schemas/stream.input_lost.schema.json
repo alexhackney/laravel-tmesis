@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/StreamInputLost",
+  "$defs": {
+    "StreamInputLost": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "stream.input_lost"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string"
+        },
+        "epoch": {
+          "type": "integer"
+        },
+        "fallback_layer": {
+          "type": "string",
+          "description": "which layer of the fallback chain took over; none in this build, which holds the manifest on the last segment",
+          "enum": [
+            "backup",
+            "filler",
+            "slate",
+            "card",
+            "none"
+          ]
+        },
+        "spliced_at_media_sequence": {
+          "description": "the media sequence where a fallback layer was spliced in; null when nothing was spliced at loss, which is every build with fallback_layer none",
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "publisher_timeout is an EOF whose last packet is older than the transport's peer-idle window; publisher_closed is any other EOF; source_error is a read error; node_draining is the node's own drain (a restart or a stop) holding a session that was live, which the next start continues; encoder_death is not emitted by this build",
+          "enum": [
+            "publisher_timeout",
+            "publisher_closed",
+            "encoder_death",
+            "source_error",
+            "node_draining"
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "fallback_layer",
+        "spliced_at_media_sequence",
+        "reason",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

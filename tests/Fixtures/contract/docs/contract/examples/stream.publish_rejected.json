@@ -1,0 +1,13 @@
+{
+  "event": "stream.publish_rejected",
+  "delivery": "01J8ZCC1H6V9DQ2NR5TXB4KM7W",
+  "occurred_at": "2026-08-28T19:09:44.117Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "reason": "bad_signature",
+  "protocol": "srt",
+  "key_fragment": "show-2041-main.6.a5e4...2ff2",
+  "remote": "198.51.100.24:51380"
+}

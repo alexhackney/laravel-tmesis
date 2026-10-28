@@ -1,0 +1,546 @@
+{
+  "_comment": [
+    "test/vectors/fleet.json: one worked fleet exchange, for the node's OUTBOUND",
+    "fleet protocol (docs/API.md section 15, final plan 11.18, tmesis v0.7.0).",
+    "",
+    "HAND-WRITTEN, NOT GENERATED. Unlike webhooks.json and keys.json, no Go test",
+    "produces these bytes and no -update flag rewrites them. That is deliberate: the",
+    "value of this file is that a HUMAN chose the values, so it shows what a real",
+    "exchange looks like rather than restating the schema in a second notation. A",
+    "generated fixture here would prove only that the generator ran.",
+    "",
+    "WHAT IT IS FOR. Every document below validates against the schema named in its",
+    "\"schema\" field, all four generated from internal/fleet by",
+    "make -f build/Makefile contract. Every control-plane document also passes the",
+    "node's own validator (internal/fleet DecodeEnrollResponse and",
+    "DecodeHeartbeatResponse), and every desired state passes DecodeDesiredState",
+    "EXCEPT revision 44, which is the worked rejection and must be refused. A",
+    "control-plane implementation asserts its own encoder and decoder against these",
+    "documents.",
+    "",
+    "THE BYTES ARE NOT SIGNED. There is no MAC here and nothing to verify. The fleet",
+    "exchange is authenticated by the Authorization: Bearer header over TLS, not by a",
+    "body signature, so unlike webhooks.json this file carries no cryptographic",
+    "claim and is not a byte-stability gate.",
+    "",
+    "WHEN IT CHANGES. Only when a DECISION in docs/tmesis-final-plan.md changes the",
+    "exchange. It is not regenerated as a side effect of touching a Go file, and a",
+    "diff to it is a contract change every control plane has to be told about.",
+    "",
+    "HOW TO USE IT. For each entry in documents[]: compile",
+    "docs/contract/schemas/<schema>.schema.json, validate <body> against it, and",
+    "assert it passes. Then mutate one closed-set value (commands[].kind is the",
+    "cheapest) and assert the schema REJECTS it: a validator that accepts everything",
+    "is a validator that is not running."
+  ],
+
+  "exchange": "One edge box enrolling at revision 42, its first answer lost and the enrollment repeated with the same one-time token (D12: the same node_id, a fresh fleet_token); a heartbeat moving it to 43 with a revocation; revision 44 refused and reported; an API push that emptied the revocation list converged by resending revision 43; and a batch of four commands, three acted on and the update acked as moot (D10).",
+
+  "documents": [
+    {
+      "name": "enroll.request",
+      "schema": "fleet.enroll.request",
+      "note": "POSTed once by `tmesis join <enrolment-url> --token <one-time-token>` to the exact URL given. The node never appends to it.",
+      "body": {
+        "node": "edge-venue-07",
+        "role": "edge",
+        "version": "0.7.0",
+        "listen": {
+          "rtmp": "0.0.0.0:1935",
+          "srt": "0.0.0.0:8890"
+        },
+        "capabilities": {
+          "ingest_rtmp": true,
+          "ingest_srt": true,
+          "relay_copy": true,
+          "recording_ingest": true,
+          "packager": false,
+          "ladder": false
+        }
+      }
+    },
+    {
+      "name": "enroll.response",
+      "schema": "fleet.enroll.response",
+      "note": "heartbeat_url is FULL and absolute. fleet_token is kept inside /etc/tmesis/fleet.json beside the enrollment it belongs to (D11), never in config.yml or .env. The initial desired_state makes the box correct before its first heartbeat. The recording names a storage.destinations entry in destination_ref and leaves destination null: the API's model, never an s3:// URL (R01).",
+      "body": {
+        "heartbeat_url": "https://app.example.com/api/fleet/nodes/01J8ZCP4M2V8QNX4RW7TKB3PD9/heartbeat",
+        "node_id": "01J8ZCP4M2V8QNX4RW7TKB3PD9",
+        "node_name": "edge-venue-07",
+        "fleet_token": "tmf_01J8ZCP5R7V2QNX8RW4TKB6PD2_EXAMPLE_NOT_A_REAL_TOKEN",
+        "desired_state": {
+          "revision": 42,
+          "streams": [
+            {
+              "id": "show-2041-main",
+              "min_key_epoch": 6,
+              "labels": { "show_id": "2041", "site": "csn" },
+              "recording": {
+                "enabled": true,
+                "retention_hours": 72,
+                "destination": null,
+                "destination_ref": "tsp-archive"
+              },
+              "relays": [
+                {
+                  "id": "fleet-origin-atl",
+                  "url": "srt://origin-atl-01.internal:8890",
+                  "enabled": true
+                }
+              ]
+            }
+          ],
+          "revocations": [],
+          "open_posture": false
+        }
+      }
+    },
+    {
+      "name": "enroll.request.repeat",
+      "schema": "fleet.enroll.request",
+      "note": "D12: the answer to enroll.request was lost (a timeout or a cut connection after the POST), so `tmesis join` is rerun with the SAME one-time token within 15 minutes of its first use. The body is the same request; the token is what the control plane recognises.",
+      "body": {
+        "node": "edge-venue-07",
+        "role": "edge",
+        "version": "0.7.0",
+        "listen": {
+          "rtmp": "0.0.0.0:1935",
+          "srt": "0.0.0.0:8890"
+        },
+        "capabilities": {
+          "ingest_rtmp": true,
+          "ingest_srt": true,
+          "relay_copy": true,
+          "recording_ingest": true,
+          "packager": false,
+          "ladder": false
+        }
+      }
+    },
+    {
+      "name": "enroll.response.repeat",
+      "schema": "fleet.enroll.response",
+      "note": "D12: the control plane answers the repeat with the SAME node_id and node_name and a DIFFERENT fleet_token, and revokes the fleet_token enroll.response carried (whose answer never reached the box). This is the enrollment the box keeps; later heartbeats bear this token. A repeat after 15 minutes, or with a different token, is a new enrollment, not this.",
+      "body": {
+        "heartbeat_url": "https://app.example.com/api/fleet/nodes/01J8ZCP4M2V8QNX4RW7TKB3PD9/heartbeat",
+        "node_id": "01J8ZCP4M2V8QNX4RW7TKB3PD9",
+        "node_name": "edge-venue-07",
+        "fleet_token": "tmf_01J8ZCP9T3V6QNX2RW8TKB1PD5_EXAMPLE_NOT_A_REAL_TOKEN",
+        "desired_state": {
+          "revision": 42,
+          "streams": [
+            {
+              "id": "show-2041-main",
+              "min_key_epoch": 6,
+              "labels": {
+                "show_id": "2041",
+                "site": "csn"
+              },
+              "recording": {
+                "enabled": true,
+                "retention_hours": 72,
+                "destination": null,
+                "destination_ref": "tsp-archive"
+              },
+              "relays": [
+                {
+                  "id": "fleet-origin-atl",
+                  "url": "srt://origin-atl-01.internal:8890",
+                  "enabled": true
+                }
+              ]
+            }
+          ],
+          "revocations": [],
+          "open_posture": false
+        }
+      }
+    },
+    {
+      "name": "heartbeat.request.applied-42",
+      "schema": "fleet.heartbeat.request",
+      "note": "desired_revision_applied is 42, the revision enrollment delivered. revocations_digest is the SHA-256 of zero bytes, the digest of the empty list. Two durable events ride the request.",
+      "body": {
+        "node": "edge-venue-07",
+        "role": "edge",
+        "version": "0.7.0",
+        "started_at": "2026-08-28T18:44:02.000Z",
+        "observed_at": "2026-08-28T21:44:32.118Z",
+        "desired_revision_applied": 42,
+        "jobs_pause": null,
+        "stats": {
+          "uptime_seconds": 10830,
+          "sessions_active": 1,
+          "disk_free_bytes": 412316860416,
+          "disk_floor_breached": false,
+          "outbox_depth": 0,
+          "recordings_unregistered": 1
+        },
+        "streams": [
+          {
+            "stream": "show-2041-main",
+            "state": "live",
+            "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+            "epoch": 3,
+            "protocol": "srt",
+            "dual_accept": false
+          }
+        ],
+        "events": [
+          {
+            "id": "01J8ZCQ2N8R4VKX7QM3WB5TDH9",
+            "event": "stream.published",
+            "occurred_at": "2026-08-28T19:12:01.004Z",
+            "payload": "{\"event\":\"stream.published\",\"stream\":\"show-2041-main\",\"session\":\"01J8ZC8XKWQ4M7T0K3PZ2B9RVN\"}"
+          },
+          {
+            "id": "01J8ZCQ3T6K4NQX8VM2TRB7PD5",
+            "event": "recording.started",
+            "occurred_at": "2026-08-28T19:12:01.520Z",
+            "payload": "{\"event\":\"recording.started\",\"stream\":\"show-2041-main\",\"recording_id\":\"01J8ZCK5M2V8QNX4RW7TKB3PD9\",\"artifact\":\"ingest\",\"part\":0}"
+          }
+        ],
+        "acked_command_ids": [],
+        "admission": "open",
+        "revocations_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "desired_revision_rejected": null
+      }
+    },
+    {
+      "name": "heartbeat.response.revision-43",
+      "schema": "fleet.heartbeat.response",
+      "note": "Both event ids are acknowledged, so neither is retried. desired_state is present because the revision moved 42 -> 43, and every collection in it is a FULL replacement: revocations is a one-element list, not a delta.",
+      "body": {
+        "ack_event_ids": [
+          "01J8ZCQ2N8R4VKX7QM3WB5TDH9",
+          "01J8ZCQ3T6K4NQX8VM2TRB7PD5"
+        ],
+        "desired_state": {
+          "revision": 43,
+          "streams": [
+            {
+              "id": "show-2041-main",
+              "min_key_epoch": 7,
+              "labels": { "show_id": "2041", "site": "csn" },
+              "recording": {
+                "enabled": true,
+                "retention_hours": 72,
+                "destination": null,
+                "destination_ref": "tsp-archive"
+              },
+              "relays": [
+                {
+                  "id": "fleet-origin-atl",
+                  "url": "srt://origin-atl-01.internal:8890",
+                  "enabled": true
+                }
+              ]
+            }
+          ],
+          "revocations": ["show-2039-rehearsal"],
+          "open_posture": false
+        },
+        "commands": []
+      }
+    },
+    {
+      "name": "heartbeat.request.applied-43",
+      "schema": "fleet.heartbeat.request",
+      "note": "Revision 43 applied. revocations_digest is now the digest of [\"show-2039-rehearsal\"], which matches what the control plane intends.",
+      "body": {
+        "node": "edge-venue-07",
+        "role": "edge",
+        "version": "0.7.0",
+        "started_at": "2026-08-28T18:44:02.000Z",
+        "observed_at": "2026-08-28T21:44:42.120Z",
+        "desired_revision_applied": 43,
+        "jobs_pause": null,
+        "stats": {
+          "uptime_seconds": 10840,
+          "sessions_active": 1,
+          "disk_free_bytes": 412316860416,
+          "disk_floor_breached": false,
+          "outbox_depth": 0,
+          "recordings_unregistered": 1
+        },
+        "streams": [
+          {
+            "stream": "show-2041-main",
+            "state": "live",
+            "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+            "epoch": 3,
+            "protocol": "srt",
+            "dual_accept": false
+          }
+        ],
+        "events": [],
+        "acked_command_ids": [],
+        "admission": "open",
+        "revocations_digest": "a96111a3bc059be1a0939bcd90da3ec31f3a94f932f0abf0ee0e25c772b9c0d3",
+        "desired_revision_rejected": null
+      }
+    },
+    {
+      "name": "heartbeat.response.revision-44-invalid",
+      "schema": "fleet.heartbeat.response",
+      "note": "Revision 44 is well formed as an envelope and valid against the schema, so the acks and commands of this response would proceed. Its CONTENT is refused at apply time: an s3:// URL in destination is the removed form (R01), a bucket is named in destination_ref. The node changes nothing and reports it (D6).",
+      "body": {
+        "ack_event_ids": [],
+        "desired_state": {
+          "revision": 44,
+          "streams": [
+            {
+              "id": "show-2041-main",
+              "min_key_epoch": 7,
+              "labels": { "show_id": "2041", "site": "csn" },
+              "recording": {
+                "enabled": true,
+                "retention_hours": 72,
+                "destination": "s3://tsp-archive/ingest/",
+                "destination_ref": null
+              },
+              "relays": []
+            }
+          ],
+          "revocations": ["show-2039-rehearsal"],
+          "open_posture": false
+        },
+        "commands": []
+      }
+    },
+    {
+      "name": "heartbeat.request.rejected-44",
+      "schema": "fleet.heartbeat.request",
+      "note": "desired_revision_applied stays 43: revision 44 changed nothing. desired_revision_rejected carries the revision and the validator's reason, JSON path first. The control plane fixes the document and sends a higher revision.",
+      "body": {
+        "node": "edge-venue-07",
+        "role": "edge",
+        "version": "0.7.0",
+        "started_at": "2026-08-28T18:44:02.000Z",
+        "observed_at": "2026-08-28T21:44:52.121Z",
+        "desired_revision_applied": 43,
+        "jobs_pause": null,
+        "stats": {
+          "uptime_seconds": 10850,
+          "sessions_active": 1,
+          "disk_free_bytes": 412316860416,
+          "disk_floor_breached": false,
+          "outbox_depth": 0,
+          "recordings_unregistered": 1
+        },
+        "streams": [
+          {
+            "stream": "show-2041-main",
+            "state": "live",
+            "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+            "epoch": 3,
+            "protocol": "srt",
+            "dual_accept": false
+          }
+        ],
+        "events": [],
+        "acked_command_ids": [],
+        "admission": "open",
+        "revocations_digest": "a96111a3bc059be1a0939bcd90da3ec31f3a94f932f0abf0ee0e25c772b9c0d3",
+        "desired_revision_rejected": {
+          "revision": 44,
+          "reason": "streams[0].recording: must be an absolute filesystem path; a destination name goes in `recording.ingest.destination_ref`, not here"
+        }
+      }
+    },
+    {
+      "name": "heartbeat.request.digest-drift",
+      "schema": "fleet.heartbeat.request",
+      "note": "A delayed POST /api/v1/keys/revocations with [] landed after revision 43 and emptied the list, so revocations_digest is the empty list's digest again while desired_revision_applied is still 43. The revision did not move, and only the digest shows the drift (R16).",
+      "body": {
+        "node": "edge-venue-07",
+        "role": "edge",
+        "version": "0.7.0",
+        "started_at": "2026-08-28T18:44:02.000Z",
+        "observed_at": "2026-08-28T21:45:02.119Z",
+        "desired_revision_applied": 43,
+        "jobs_pause": null,
+        "stats": {
+          "uptime_seconds": 10860,
+          "sessions_active": 1,
+          "disk_free_bytes": 412316860416,
+          "disk_floor_breached": false,
+          "outbox_depth": 0,
+          "recordings_unregistered": 1
+        },
+        "streams": [
+          {
+            "stream": "show-2041-main",
+            "state": "live",
+            "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+            "epoch": 3,
+            "protocol": "srt",
+            "dual_accept": false
+          }
+        ],
+        "events": [],
+        "acked_command_ids": [],
+        "admission": "open",
+        "revocations_digest": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "desired_revision_rejected": {
+          "revision": 44,
+          "reason": "streams[0].recording: must be an absolute filesystem path; a destination name goes in `recording.ingest.destination_ref`, not here"
+        }
+      }
+    },
+    {
+      "name": "heartbeat.response.revision-43-resent",
+      "schema": "fleet.heartbeat.response",
+      "note": "The digest differs from the digest of the list the control plane intends, so it resends the applied document at the SAME revision, 43. The node applies that equal revision's revocation list and nothing else (WP4, WP5).",
+      "body": {
+        "ack_event_ids": [],
+        "desired_state": {
+          "revision": 43,
+          "streams": [
+            {
+              "id": "show-2041-main",
+              "min_key_epoch": 7,
+              "labels": { "show_id": "2041", "site": "csn" },
+              "recording": {
+                "enabled": true,
+                "retention_hours": 72,
+                "destination": null,
+                "destination_ref": "tsp-archive"
+              },
+              "relays": [
+                {
+                  "id": "fleet-origin-atl",
+                  "url": "srt://origin-atl-01.internal:8890",
+                  "enabled": true
+                }
+              ]
+            }
+          ],
+          "revocations": ["show-2039-rehearsal"],
+          "open_posture": false
+        },
+        "commands": []
+      }
+    },
+    {
+      "name": "heartbeat.request.converged",
+      "schema": "fleet.heartbeat.request",
+      "note": "The digest matches again. Nothing else changed.",
+      "body": {
+        "node": "edge-venue-07",
+        "role": "edge",
+        "version": "0.7.0",
+        "started_at": "2026-08-28T18:44:02.000Z",
+        "observed_at": "2026-08-28T21:45:12.117Z",
+        "desired_revision_applied": 43,
+        "jobs_pause": null,
+        "stats": {
+          "uptime_seconds": 10870,
+          "sessions_active": 1,
+          "disk_free_bytes": 412316860416,
+          "disk_floor_breached": false,
+          "outbox_depth": 0,
+          "recordings_unregistered": 1
+        },
+        "streams": [
+          {
+            "stream": "show-2041-main",
+            "state": "live",
+            "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+            "epoch": 3,
+            "protocol": "srt",
+            "dual_accept": false
+          }
+        ],
+        "events": [],
+        "acked_command_ids": [],
+        "admission": "open",
+        "revocations_digest": "a96111a3bc059be1a0939bcd90da3ec31f3a94f932f0abf0ee0e25c772b9c0d3",
+        "desired_revision_rejected": {
+          "revision": 44,
+          "reason": "streams[0].recording: must be an absolute filesystem path; a destination name goes in `recording.ingest.destination_ref`, not here"
+        }
+      }
+    },
+    {
+      "name": "heartbeat.response.commands",
+      "schema": "fleet.heartbeat.response",
+      "note": "No revision change, so desired_state is null. Four acts: kick ends the session attached to show-2041-main, seal seals a finished rehearsal stream with 30 seconds of grace, drain closes admission in place (D3), and update is received and acked as moot, because v0.7.0 does not perform it (D10).",
+      "body": {
+        "ack_event_ids": [],
+        "desired_state": null,
+        "commands": [
+          {
+            "id": "01J8ZCS7T4N2QWX6VM3RKB9PD8",
+            "kind": "drain",
+            "stream": null,
+            "args": {}
+          },
+          {
+            "id": "01J8ZCS8A1M5QWX6VM3RKB9PD8",
+            "kind": "kick",
+            "stream": "show-2041-main",
+            "args": {}
+          },
+          {
+            "id": "01J8ZCS9B2N6QWX6VM3RKB9PD8",
+            "kind": "seal",
+            "stream": "show-2039-rehearsal",
+            "args": { "grace_seconds": "30" }
+          },
+          {
+            "id": "01J8ZCSAC3P7QWX6VM3RKB9PD8",
+            "kind": "update",
+            "stream": null,
+            "args": { "version": "0.7.1" }
+          }
+        ]
+      }
+    },
+    {
+      "name": "heartbeat.request.commands-acked",
+      "schema": "fleet.heartbeat.request",
+      "note": "All four ids are acked: three done, the update moot. admission is draining because the drain was performed; the process is still up and the heartbeat keeps running. The kicked session is gone from streams.",
+      "body": {
+        "node": "edge-venue-07",
+        "role": "edge",
+        "version": "0.7.0",
+        "started_at": "2026-08-28T18:44:02.000Z",
+        "observed_at": "2026-08-28T21:45:22.130Z",
+        "desired_revision_applied": 43,
+        "jobs_pause": null,
+        "stats": {
+          "uptime_seconds": 10880,
+          "sessions_active": 0,
+          "disk_free_bytes": 412316860416,
+          "disk_floor_breached": false,
+          "outbox_depth": 0,
+          "recordings_unregistered": 1
+        },
+        "streams": [
+          {
+            "stream": "show-2041-main",
+            "state": "idle",
+            "session": "",
+            "epoch": 3,
+            "protocol": "",
+            "dual_accept": false
+          }
+        ],
+        "events": [],
+        "acked_command_ids": [
+          "01J8ZCS7T4N2QWX6VM3RKB9PD8",
+          "01J8ZCS8A1M5QWX6VM3RKB9PD8",
+          "01J8ZCS9B2N6QWX6VM3RKB9PD8",
+          "01J8ZCSAC3P7QWX6VM3RKB9PD8"
+        ],
+        "admission": "draining",
+        "revocations_digest": "a96111a3bc059be1a0939bcd90da3ec31f3a94f932f0abf0ee0e25c772b9c0d3",
+        "desired_revision_rejected": {
+          "revision": 44,
+          "reason": "streams[0].recording: must be an absolute filesystem path; a destination name goes in `recording.ingest.destination_ref`, not here"
+        }
+      }
+    }
+  ]
+}

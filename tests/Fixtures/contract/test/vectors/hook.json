@@ -1,0 +1,72 @@
+{
+  "_comment": [
+    "test/vectors/hook.json: worked publish.verify RESPONSES, the body a control plane",
+    "returns to the node's synchronous publish hook (docs/WEBHOOKS.md section 12,",
+    "final plan 5.1a; v0.6.0 WP5 item 1).",
+    "",
+    "HAND-WRITTEN, NOT GENERATED, for the reason fleet.json is: the control plane",
+    "authors these bytes, so a human chose them to show what a real answer looks like.",
+    "Three Go tests hold them to the code instead: internal/contract validates every",
+    "body against docs/contract/schemas/publish.verify.response.schema.json (generated",
+    "from webhook.HookResponse), internal/webhook feeds every body through a real",
+    "Hook.Consult and asserts the decision, and internal/node feeds the patch through",
+    "the node's own applyHookPatch. The first response is also rendered as",
+    "docs/contract/examples/publish.verify.response.json by make -f build/Makefile",
+    "contract.",
+    "",
+    "THE BYTES ARE NOT SIGNED. A hook response is authenticated by the TLS connection",
+    "the node opened, not by a body signature; the REQUEST is signed (webhooks.json).",
+    "",
+    "WHEN IT CHANGES. Only when a decision changes the response. It is contract",
+    "(final plan 11.47): a PATCH release may not change it."
+  ],
+  "responses": [
+    {
+      "name": "allow, provisioning labels and the origin relay",
+      "schema": "publish.verify.response",
+      "body": {
+        "allow": true,
+        "patch": {
+          "labels": {
+            "tenant": "acme",
+            "show": "2041"
+          },
+          "relays": [
+            {
+              "id": "origin",
+              "url": "rtmp://origin-atl-01.example.com:1935/src"
+            }
+          ]
+        }
+      },
+      "decision": {
+        "allow": true,
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "allow with no patch",
+      "schema": "publish.verify.response",
+      "body": {
+        "allow": true
+      },
+      "decision": {
+        "allow": true,
+        "outcome": "allowed"
+      }
+    },
+    {
+      "name": "deny with a reason",
+      "schema": "publish.verify.response",
+      "body": {
+        "allow": false,
+        "reason": "show 2041 was cancelled"
+      },
+      "decision": {
+        "allow": false,
+        "outcome": "denied",
+        "reason": "show 2041 was cancelled"
+      }
+    }
+  ]
+}

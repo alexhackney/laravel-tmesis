@@ -1,0 +1,21 @@
+{
+  "event": "lease.fenced",
+  "delivery": "01J8ZCZ6R2M8QWX4KN7TVB5PD3",
+  "occurred_at": "2026-08-28T19:11:58.612Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "prefix": "live/show-2041-main",
+  "cause": "superseded",
+  "held_epoch": 11,
+  "observed_epoch": 12,
+  "new_holder": "origin-atl-01",
+  "writes_stopped_at": "2026-08-28T19:11:58.61Z",
+  "abandoned_uploads": 4,
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  }
+}

@@ -1,0 +1,88 @@
+{
+  "identity": {
+    "node": "origin-atl-01",
+    "role": "origin",
+    "version": "1.4.0",
+    "commit": "4d9f2a1",
+    "go_version": "go1.25.1",
+    "pid": 1417,
+    "started_at": "2026-08-27T04:11:52.006Z",
+    "uptime_seconds": 141251.112
+  },
+  "load": {
+    "active_streams": 2,
+    "tracked_streams": 3,
+    "child_processes": 4,
+    "child_restarts_total": 0,
+    "publish_rejected_total": 1,
+    "goroutines": 214,
+    "cpu_seconds_total": 39218.44,
+    "go_heap_alloc_bytes": 68157440,
+    "go_sys_bytes": 132120576,
+    "dropped_updates_unknown_stream": 0,
+    "invalid_updates": 0,
+    "suppressed_streams": 0
+  },
+  "disk": {
+    "data_dir": "/var/lib/tmesis",
+    "statfs_ok": true,
+    "free_bytes": 412316860416,
+    "floor_bytes": 10737418240,
+    "headroom_bytes": 401579442176,
+    "total_bytes": 1919850381312,
+    "near_margin_bytes": 21474836480,
+    "floor_breached": false
+  },
+  "capacity": {
+    "measured": true,
+    "pending_milestone": "",
+    "encode_slots_total": 7,
+    "encode_slots_used": 2,
+    "max_streams": 0,
+    "benchmark_ran_at": "2026-08-20T14:02:11Z",
+    "admission": "on",
+    "source": "measured",
+    "unit_ladder": "production",
+    "device_sessions_total": 12,
+    "device_sessions_used": 2
+  },
+  "integration": {
+    "mode": "simple",
+    "webhook_outbox_depth": 0,
+    "control_plane_reachable": null,
+    "fleet_revision": null,
+    "admission": "open",
+    "last_heartbeat_at": null,
+    "leases": [
+      {
+        "prefix": "hls/show-2041-main",
+        "fencing_epoch": 12,
+        "held": true,
+        "fenced_total": 0
+      }
+    ]
+  },
+  "video_engine": {
+    "encoder": "h264_nvenc",
+    "preset": "p2",
+    "accelerator": "nvenc",
+    "placement": "discrete",
+    "device": "/dev/nvidia0",
+    "fell_back_with_device_available": false,
+    "reason": "h264_nvenc is compiled in, /dev/nvidia* (nvidia, discrete) is present, and a one second trial encode applied every option",
+    "requested": "auto",
+    "usable": true
+  },
+  "jobs_video_engine": {
+    "encoder": "libx264",
+    "preset": "veryfast",
+    "accelerator": "none",
+    "placement": "none",
+    "device": "",
+    "fell_back_with_device_available": false,
+    "reason": "pinned to libx264 by jobs.video_encoder (devices present: /dev/nvidia* (nvidia, discrete))",
+    "requested": "libx264",
+    "usable": true
+  },
+  "observed_at": "2026-08-28T19:26:03.118Z"
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/KeytermsHookResponse",
+  "$defs": {
+    "KeytermsHookResponse": {
+      "type": "object",
+      "properties": {
+        "keyterms": {
+          "type": "array",
+          "description": "The stream's keyterms for this session, in the order the provider should get them: at most 100, each 1 to 50 characters after trimming, no control characters (duplicates are removed case-insensitively). An empty array is none. Once a session has an answer, it replaces the stream's captions.keyterms for that session; an answer that breaks a rule is ignored whole and the last list stays in force.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "keyterms"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

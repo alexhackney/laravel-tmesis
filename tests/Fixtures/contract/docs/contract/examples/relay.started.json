@@ -1,0 +1,23 @@
+{
+  "event": "relay.started",
+  "delivery": "01J8ZCM2R6P9RN2VKX5WB8QDH1",
+  "occurred_at": "2026-08-28T19:12:03.021Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "destination": {
+    "id": "static-0",
+    "url": "srt://origin-atl-01.internal:6001",
+    "state": "connecting",
+    "bytes_out": 18490112000,
+    "dropped_bytes": 0,
+    "reconnects": 0,
+    "feed": "ingest"
+  },
+  "reason": "",
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  }
+}

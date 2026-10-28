@@ -1,0 +1,18 @@
+{
+  "event": "stream.input_returned",
+  "delivery": "01J8ZCG5T7M2QXW9KR4NVB3PD8",
+  "occurred_at": "2026-08-28T20:04:47.101Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "epoch": 3,
+  "gap_seconds": 95.6,
+  "spliced_at_media_sequence": null,
+  "from_layer": "none",
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/RecordingDegraded",
+  "$defs": {
+    "RecordingDegraded": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "recording.degraded"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string"
+        },
+        "epoch": {
+          "type": "integer"
+        },
+        "recording_id": {
+          "type": "string"
+        },
+        "artifact": {
+          "type": "string",
+          "enum": [
+            "ingest",
+            "master"
+          ]
+        },
+        "part": {
+          "type": "integer",
+          "description": "0-based, per session and artifact: the same number recording.started carried for this recording_id (the first part of a session is 0)."
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "degraded"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "CLOSED set: why the node shed recording writes.",
+          "enum": [
+            "disk_floor",
+            "write_drops",
+            "slow_disk",
+            "write_error"
+          ]
+        },
+        "detail": {
+          "type": "string",
+          "description": "A human sentence with the numbers behind the reason."
+        },
+        "recovered": {
+          "type": "boolean",
+          "description": "false on entering the degraded state, true on the event reporting that writing resumed."
+        },
+        "dropped_bytes": {
+          "type": "integer",
+          "description": "Shed since the last recording.degraded for this artifact."
+        },
+        "dropped_bytes_total": {
+          "type": "integer",
+          "description": "Shed over the life of this artifact. It appears again on recording.completed."
+        },
+        "bytes": {
+          "type": "integer"
+        },
+        "since": {
+          "type": "string",
+          "description": "When the degradation started, which is before this event was enqueued: the node sheds first and tells anyone afterwards."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "recording_id",
+        "artifact",
+        "part",
+        "state",
+        "reason",
+        "detail",
+        "recovered",
+        "dropped_bytes",
+        "dropped_bytes_total",
+        "bytes",
+        "since",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

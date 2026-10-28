@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/HookRequest",
+  "$defs": {
+    "HookRequest": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "publish.verify"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "key_type": {
+          "type": "string",
+          "enum": [
+            "signed",
+            "bare_configured",
+            "bare_unproven"
+          ]
+        },
+        "key_id": {
+          "type": "string"
+        },
+        "key_fragment": {
+          "type": "string"
+        },
+        "key_epoch": {
+          "type": "integer"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "srt",
+            "rtmp",
+            "rtmps"
+          ]
+        },
+        "remote": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string"
+        },
+        "open_posture": {
+          "type": "boolean"
+        },
+        "takeover": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "key_type",
+        "key_id",
+        "key_fragment",
+        "key_epoch",
+        "protocol",
+        "remote",
+        "session",
+        "open_posture",
+        "takeover"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

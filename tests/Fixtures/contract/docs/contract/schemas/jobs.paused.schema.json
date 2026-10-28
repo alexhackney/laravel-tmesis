@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/JobsPaused",
+  "$defs": {
+    "JobsPaused": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "jobs.paused"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "until": {
+          "description": "When the pause ends by itself; null until cleared.",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "RFC3339 UTC, docs/API.md section 4"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "fleet: the control plane's desired state. api: PUT /api/v1/transcode/pause.",
+          "enum": [
+            "fleet",
+            "api"
+          ]
+        },
+        "set_at": {
+          "type": "string",
+          "description": "When the pause was written."
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "until",
+        "reason",
+        "source",
+        "set_at"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

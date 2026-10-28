@@ -1,0 +1,16 @@
+{
+  "relays": [
+    {
+      "id": "01J8ZCC1H6V9DQ2NR5TXB4KM7W",
+      "url": "srt://origin-atl-01.internal:8890",
+      "enabled": true,
+      "source": "static",
+      "state": "connected",
+      "bytes_out": 18490112000,
+      "dropped_bytes": 0,
+      "reconnects": 0,
+      "feed": "auto",
+      "feed_resolved": "ingest"
+    }
+  ]
+}

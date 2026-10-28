@@ -1,0 +1,66 @@
+{
+  "generation": "01J8ZCK5R7V2QNX8RW4TKB6PD2",
+  "revision": 1,
+  "request_id": "01J8ZCK6R3M8QWX2VN5TKB7PD4",
+  "inventory_sha256": "9f2c1d5e6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f",
+  "current": true,
+  "targets": [
+    {
+      "id": "01J8ZCK7T4N2QWX6VM3RKB9PD8",
+      "artifact": "recording_ingest",
+      "authorization": "configured",
+      "destination_ref": "csn-vod",
+      "endpoint": "",
+      "region": "us-east-1",
+      "bucket": "csn-vod",
+      "credential_profile": "csn-vod-writer",
+      "upload_concurrency": 8,
+      "addressing": "auto",
+      "part_size_bytes": 16777216,
+      "key": "csn/2026/show/show-ingest.ts",
+      "prefix": null,
+      "master_name": null,
+      "counts": {
+        "queued": 0,
+        "uploading": 0,
+        "waiting_authorization": 0,
+        "retry_failed": 0,
+        "failed": 0,
+        "complete": 1
+      }
+    },
+    {
+      "id": "01J8ZCK8T4N2QWX6VM3RKB9PD8",
+      "artifact": "recording_ingest",
+      "authorization": "signed",
+      "destination_ref": null,
+      "endpoint": "https://archive.example.net",
+      "region": "us-east-1",
+      "bucket": "backup",
+      "credential_profile": null,
+      "upload_concurrency": 4,
+      "addressing": "path",
+      "part_size_bytes": 16777216,
+      "key": "backup/csn/2026/show/show-ingest.ts",
+      "prefix": null,
+      "master_name": null,
+      "counts": {
+        "queued": 0,
+        "uploading": 0,
+        "waiting_authorization": 1,
+        "retry_failed": 0,
+        "failed": 0,
+        "complete": 0
+      }
+    }
+  ],
+  "counts": {
+    "queued": 0,
+    "uploading": 0,
+    "waiting_authorization": 1,
+    "retry_failed": 0,
+    "failed": 0,
+    "complete": 1
+  },
+  "created_at": "2026-09-22T22:00:00.000Z"
+}

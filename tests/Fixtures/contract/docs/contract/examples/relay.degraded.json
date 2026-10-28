@@ -1,0 +1,23 @@
+{
+  "event": "relay.degraded",
+  "delivery": "01J8ZCM4V8P9RN2VKX5WB8QDH2",
+  "occurred_at": "2026-08-28T20:58:06.41Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "destination": {
+    "id": "static-0",
+    "url": "srt://origin-atl-01.internal:6001",
+    "state": "degraded",
+    "bytes_out": 18490112000,
+    "dropped_bytes": 4194304,
+    "reconnects": 1,
+    "feed": "ingest"
+  },
+  "reason": "the destination is slower than the feed; the copy is lossy and the show is unaffected",
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  }
+}

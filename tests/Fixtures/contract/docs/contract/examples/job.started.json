@@ -1,0 +1,16 @@
+{
+  "event": "job.started",
+  "delivery": "01J8ZCQ6W2N8KRX4QM7TVB5PD3",
+  "occurred_at": "2026-08-28T19:31:20.881Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "job": "job_01J8ZCA2R7F3H9NQ4KTX8VD5YB",
+  "state": "running",
+  "attempt": 1,
+  "queued_seconds": 8.8,
+  "backend": "libx264",
+  "labels": {
+    "video_id": "941"
+  }
+}

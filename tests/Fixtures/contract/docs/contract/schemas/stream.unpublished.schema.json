@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/StreamUnpublished",
+  "$defs": {
+    "StreamUnpublished": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "stream.unpublished"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string"
+        },
+        "epoch": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string",
+          "enum": [
+            "publisher_closed",
+            "timeout",
+            "takeover",
+            "kicked",
+            "node_draining",
+            "error"
+          ]
+        },
+        "duration_seconds": {
+          "type": "number",
+          "description": "Session wall-clock length"
+        },
+        "bytes_in": {
+          "type": "integer",
+          "description": "Container bytes received on this session"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "reason",
+        "duration_seconds",
+        "bytes_in",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

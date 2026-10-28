@@ -1,0 +1,11 @@
+{
+  "event": "jobs.resumed",
+  "delivery": "01J8ZC4A2M8QNX7VR5KTWB3PD1",
+  "occurred_at": "2026-08-28T19:00:00.006Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "cause": "expired",
+  "source": "fleet",
+  "paused_at": "2026-08-28T12:00:00.409Z"
+}

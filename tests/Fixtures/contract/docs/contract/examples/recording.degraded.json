@@ -1,0 +1,26 @@
+{
+  "event": "recording.degraded",
+  "delivery": "01J8ZCJ9R2M8QWX4VN7TKB5PD6",
+  "occurred_at": "2026-08-28T20:41:09.882Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "epoch": 3,
+  "recording_id": "01J8ZCK5M2V8QNX4RW7TKB3PD9",
+  "artifact": "ingest",
+  "part": 0,
+  "state": "degraded",
+  "reason": "disk_floor",
+  "detail": "8.4 GiB free against a 10 GiB floor",
+  "recovered": false,
+  "dropped_bytes": 41943040,
+  "dropped_bytes_total": 41943040,
+  "bytes": 9184002048,
+  "since": "2026-08-28T20:41:09.74Z",
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  }
+}

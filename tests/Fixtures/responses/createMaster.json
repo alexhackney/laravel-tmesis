@@ -1,0 +1,52 @@
+{
+  "id": "01J8ZCQ4M2T7VNX3RW8KPB5DH6",
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "session_epoch": 3,
+  "job_id": null,
+  "kind": "recording_master",
+  "recording_id": "01J8ZCQ4M2T7VNX3RW8KPB5DH6",
+  "state": "held",
+  "inventory_sha256": null,
+  "object_count": 0,
+  "size_bytes": 0,
+  "finalized_at": null,
+  "registered_at": null,
+  "retention_hours": 72,
+  "retention_expires_at": null,
+  "plan_revision": null,
+  "release_state": "unreleased",
+  "held": true,
+  "hold_reasons": [
+    "not_finalized",
+    "release_required"
+  ],
+  "local_present": true,
+  "created_at": "2026-09-22T22:05:00.000Z",
+  "master": {
+    "request_id": "01J8ZCQ3K9R4TWX2VN6MPB8DF1",
+    "state": "queued",
+    "sources": [
+      "01J8ZCK5R7V2QNX8RW4TKB6PD2",
+      "01J8ZCM1T8V3QNX7RW2KPB4DF9"
+    ],
+    "capture_container": "mpegts",
+    "target": {
+      "id": "01J8ZCQ3P6N1QWX8VM4RKB2PD7",
+      "artifact": "recording_master",
+      "authorization": "configured",
+      "destination_ref": "tsp-media",
+      "endpoint": "",
+      "region": "us-east-1",
+      "bucket": "tsp-media",
+      "credential_profile": "tsp-media",
+      "upload_concurrency": 4,
+      "addressing": "auto",
+      "part_size_bytes": 16777216,
+      "key": "shows/2041/show-2041-main-master.mp4"
+    },
+    "reason": "Show 2041 ended; combine the parts",
+    "error": null
+  },
+  "purge_requested_at": null
+}

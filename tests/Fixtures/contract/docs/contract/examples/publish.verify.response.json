@@ -1,0 +1,15 @@
+{
+  "allow": true,
+  "patch": {
+    "labels": {
+      "tenant": "acme",
+      "show": "2041"
+    },
+    "relays": [
+      {
+        "id": "origin",
+        "url": "rtmp://origin-atl-01.example.com:1935/src"
+      }
+    ]
+  }
+}

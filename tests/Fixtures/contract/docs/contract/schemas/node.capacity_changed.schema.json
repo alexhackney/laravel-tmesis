@@ -1,0 +1,333 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/NodeCapacityChanged",
+  "$defs": {
+    "NodeCapacityChanged": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "node.capacity_changed"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string",
+          "description": "CLOSED set. benchmark: the stored measurements at boot (live and jobs). encoder: a pinned encoder at boot, with its usable flag. admission: the units ledger filled or cleared (only while admission is on). device: the encoder session ceiling filled (no room for one more session of the unit ladder) or cleared.",
+          "enum": [
+            "benchmark",
+            "admission",
+            "device",
+            "encoder"
+          ]
+        },
+        "full": {
+          "description": "admission and device: true when the ledger filled, false when it has stayed below its limit for the 30 s hold-down. Null for benchmark and encoder.",
+          "oneOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "live_capacity": {
+          "$ref": "#/$defs/NodeLiveCapacity",
+          "description": "The health live_capacity object. On admission and device the transition's own used and limit, never a later reading."
+        },
+        "jobs_capacity": {
+          "description": "The job slots and their source. Null when jobs are off.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NodeJobsCapacity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "video_engine": {
+          "description": "The live ladder's encoder, as on node.online. Null on a node that encodes no live stream.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NodeVideoEngine"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "jobs_video_engine": {
+          "description": "The VOD job encoder, as on node.online. Null when jobs are off.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NodeVideoEngine"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "previous": {
+          "description": "The prior value of each live_capacity field that changed since the last event of this reason from this process. Null for benchmark and encoder, and for the first event of a reason.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NodeLiveCapacityPrevious"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "reason",
+        "full",
+        "live_capacity",
+        "jobs_capacity",
+        "video_engine",
+        "jobs_video_engine",
+        "previous"
+      ],
+      "additionalProperties": false
+    },
+    "NodeJobsCapacity": {
+      "type": "object",
+      "properties": {
+        "slots": {
+          "type": "integer"
+        },
+        "source": {
+          "type": "string",
+          "description": "CLOSED set. configured: jobs.max_concurrent. measured: the stored job measurement valid for this box. unmeasured and stale run one job.",
+          "enum": [
+            "configured",
+            "measured",
+            "unmeasured",
+            "stale"
+          ]
+        }
+      },
+      "required": [
+        "slots",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "NodeLiveCapacity": {
+      "type": "object",
+      "properties": {
+        "admission": {
+          "type": "string",
+          "description": "CLOSED set. Live unit admission: on refuses past encode_slots_total; off admits and still counts (unmeasured, stale or insufficient); not_applicable is a node that does not encode live (passthrough or transcoder).",
+          "enum": [
+            "on",
+            "off",
+            "not_applicable"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "description": "CLOSED set. Where the limits came from: the stored measurement valid for this box, a told limits.max_streams, none, a record of another box, a record that found the box cannot hold one session; not_applicable with admission not_applicable.",
+          "enum": [
+            "measured",
+            "configured",
+            "unmeasured",
+            "stale",
+            "insufficient",
+            "not_applicable"
+          ]
+        },
+        "unit_ladder": {
+          "type": "string",
+          "description": "The ladder one unit is one session of: the stored record's, else encode.default_ladder; empty when not applicable."
+        },
+        "encode_slots_total": {
+          "description": "The unit limit. Null whenever admission is not on, never 0 as a stand-in for unknown.",
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "encode_slots_used": {
+          "type": "integer",
+          "description": "Units held by live sessions, counted whether or not admission is on."
+        },
+        "device_sessions_total": {
+          "description": "The NVENC/QSV encoder session ceiling of a stored record that matches this box. Null when no ceiling is known.",
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "device_sessions_used": {
+          "type": "integer",
+          "description": "Encoder sessions held on the device: live sessions plus running job encoders."
+        },
+        "measured_at": {
+          "description": "When the stored record was measured, stale ones included. Null when no record was read.",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "RFC3339 UTC, docs/API.md section 4"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "admission",
+        "source",
+        "unit_ladder",
+        "encode_slots_total",
+        "encode_slots_used",
+        "device_sessions_total",
+        "device_sessions_used",
+        "measured_at"
+      ],
+      "additionalProperties": false
+    },
+    "NodeLiveCapacityPrevious": {
+      "type": "object",
+      "properties": {
+        "admission": {
+          "type": "string",
+          "enum": [
+            "on",
+            "off",
+            "not_applicable"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "enum": [
+            "measured",
+            "configured",
+            "unmeasured",
+            "stale",
+            "insufficient",
+            "not_applicable"
+          ]
+        },
+        "unit_ladder": {
+          "type": "string"
+        },
+        "encode_slots_total": {
+          "type": "integer"
+        },
+        "encode_slots_used": {
+          "type": "integer"
+        },
+        "device_sessions_total": {
+          "type": "integer"
+        },
+        "device_sessions_used": {
+          "type": "integer"
+        },
+        "measured_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, docs/API.md section 4"
+        }
+      },
+      "additionalProperties": false
+    },
+    "NodeVideoEngine": {
+      "type": "object",
+      "properties": {
+        "encoder": {
+          "type": "string",
+          "description": "The ffmpeg encoder the workload is built with; under a failed pin, the pin."
+        },
+        "preset": {
+          "type": "string"
+        },
+        "accelerator": {
+          "type": "string",
+          "enum": [
+            "none",
+            "nvenc",
+            "qsv"
+          ]
+        },
+        "placement": {
+          "type": "string",
+          "enum": [
+            "none",
+            "discrete",
+            "integrated",
+            "unknown"
+          ]
+        },
+        "fell_back_with_device_available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "requested": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "libx264",
+            "h264_nvenc",
+            "h264_qsv"
+          ]
+        },
+        "usable": {
+          "type": "boolean",
+          "description": "False only for a pin that failed at boot: the workload is refused until it is repaired or set to auto and tmesis restarts."
+        }
+      },
+      "required": [
+        "encoder",
+        "preset",
+        "accelerator",
+        "placement",
+        "fell_back_with_device_available",
+        "reason",
+        "requested",
+        "usable"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/JobStarted",
+  "$defs": {
+    "JobStarted": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "job.started"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "job": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "running"
+          ]
+        },
+        "attempt": {
+          "type": "integer",
+          "description": "This claim's attempt count."
+        },
+        "queued_seconds": {
+          "type": "number",
+          "description": "Wait since this claim's queued_at, which a requeue resets."
+        },
+        "backend": {
+          "type": "string",
+          "description": "The video encoder the node selected at boot."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "job",
+        "state",
+        "attempt",
+        "queued_seconds",
+        "backend",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

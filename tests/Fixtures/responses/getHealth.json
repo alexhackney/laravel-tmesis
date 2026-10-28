@@ -1,0 +1,83 @@
+{
+  "status": "ok",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "version": "1.4.0",
+  "contract_version": 1,
+  "started_at": "2026-08-27T04:11:52.006Z",
+  "uptime_seconds": 140409,
+  "ready": true,
+  "draining": false,
+  "admission": "open",
+  "config_source": "search_path",
+  "ingest": "listening",
+  "degraded_reasons": [],
+  "transcription": [
+    {
+      "role": "live",
+      "provider": "deepgram",
+      "endpoint": "https://api.deepgram.com/v1/listen",
+      "state": "up",
+      "since": "2026-08-27T04:11:52Z",
+      "unavailable": false,
+      "detail": null
+    }
+  ],
+  "journal": {
+    "ok": true,
+    "schema_version": 4,
+    "outbox_depth": 0,
+    "outbox_oldest_age_seconds": 0
+  },
+  "streams": {
+    "provisioned": 3,
+    "live": 2
+  },
+  "jobs": {
+    "queued": 0,
+    "running": 1,
+    "slots": 6,
+    "paused": null
+  },
+  "capacity": {
+    "encode_slots_total": 6,
+    "encode_slots_used": 1
+  },
+  "disk": {
+    "free_bytes": 412316860416,
+    "floor_bytes": 10737418240,
+    "ok": true
+  },
+  "live_capacity": {
+    "admission": "on",
+    "source": "measured",
+    "unit_ladder": "production",
+    "encode_slots_total": 7,
+    "encode_slots_used": 3,
+    "device_sessions_total": 12,
+    "device_sessions_used": 4,
+    "caption_sessions_total": null,
+    "caption_sessions_used": null,
+    "measured_at": "2026-08-20T14:02:11Z"
+  },
+  "video_engine": {
+    "encoder": "h264_nvenc",
+    "preset": "p2",
+    "accelerator": "nvenc",
+    "placement": "discrete",
+    "fell_back_with_device_available": false,
+    "reason": "h264_nvenc is compiled in, /dev/nvidia* (nvidia, discrete) is present, and a one second trial encode applied every option",
+    "requested": "auto",
+    "usable": true
+  },
+  "jobs_video_engine": {
+    "encoder": "libx264",
+    "preset": "veryfast",
+    "accelerator": "none",
+    "placement": "none",
+    "fell_back_with_device_available": false,
+    "reason": "pinned to libx264 by jobs.video_encoder (devices present: /dev/nvidia* (nvidia, discrete))",
+    "requested": "libx264",
+    "usable": true
+  }
+}

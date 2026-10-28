@@ -1,0 +1,35 @@
+# The reference receiver (v0.2 work item W19).
+#
+#   composer install
+#   vendor/bin/testbench serve --host=0.0.0.0 --port=8093
+#
+# It boots a real Laravel application with this package installed and both inbound
+# routes turned on, so a node can be pointed at it and the M1 gate's "the receiver
+# answered a real node" row can actually be proved. Everything it needs comes from the
+# environment; see Workbench\App\Providers\ReceiverServiceProvider for the five
+# variables and their defaults.
+#
+# It is a GATE TOOL, not shipped runtime: orchestra/workbench is a dev dependency and
+# nothing under workbench/ is autoloaded for a consumer.
+providers:
+  - AlexHackney\Tmesis\TmesisServiceProvider
+  - Workbench\App\Providers\ReceiverServiceProvider
+
+env:
+  - APP_NAME="Tmesis reference receiver"
+  - APP_ENV=local
+  - APP_DEBUG=true
+  - APP_URL=http://127.0.0.1:8093
+  # The delivery store is the file cache under workbench storage: durable across a
+  # restart, which is what makes a 2xx on recording.registered mean something.
+  - CACHE_STORE=file
+  - LOG_LEVEL=debug
+
+workbench:
+  start: '/'
+  install: true
+  discovers:
+    config: false
+    web: false
+    api: false
+    commands: false

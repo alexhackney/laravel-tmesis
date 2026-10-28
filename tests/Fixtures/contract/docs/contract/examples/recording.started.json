@@ -1,0 +1,26 @@
+{
+  "event": "recording.started",
+  "delivery": "01J8ZCJ8W4N6QKX2VR5TMB7PD3",
+  "occurred_at": "2026-08-28T19:12:01.52Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "epoch": 3,
+  "recording_id": "01J8ZCK5M2V8QNX4RW7TKB3PD9",
+  "artifact": "ingest",
+  "part": 0,
+  "path": "/var/lib/tmesis/recordings/show-2041-main/01J8ZC8XKWQ4M7T0K3PZ2B9RVN-ingest-0.ts",
+  "container": "mpegts",
+  "source": "publisher",
+  "fencing_epoch": 0,
+  "started_by": "publisher",
+  "destination": "/mnt/archive/ingest",
+  "retention_hours": 72,
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  },
+  "source_generations": []
+}

@@ -1,0 +1,37 @@
+{
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "lang": "en",
+  "provider": "deepgram",
+  "cues": [
+    {
+      "seq": 1,
+      "provider": "deepgram",
+      "start": 1.500,
+      "end": 3.200,
+      "program_date": "2026-09-22T19:12:02.982Z",
+      "text": "Good evening from Atlanta.",
+      "words": [
+        { "word": "good", "punctuated_word": "Good", "start": 1.500, "end": 1.800, "confidence": 0.99, "speaker": null },
+        { "word": "evening", "punctuated_word": "evening", "start": 1.800, "end": 2.300, "confidence": 0.98, "speaker": null },
+        { "word": "from", "punctuated_word": "from", "start": 2.300, "end": 2.500, "confidence": 0.99, "speaker": null },
+        { "word": "atlanta", "punctuated_word": "Atlanta.", "start": 2.500, "end": 3.200, "confidence": 0.97, "speaker": null }
+      ]
+    },
+    {
+      "seq": 2,
+      "provider": "deepgram",
+      "start": 3.400,
+      "end": 5.000,
+      "program_date": "2026-09-22T19:12:04.882Z",
+      "text": "Welcome to the show.",
+      "speaker": 0,
+      "words": [
+        { "word": "welcome", "punctuated_word": "Welcome", "start": 3.400, "end": 3.900, "confidence": 0.97, "speaker": 0 },
+        { "word": "to", "punctuated_word": "to", "start": 3.900, "end": 4.000, "confidence": 0.99, "speaker": 0 },
+        { "word": "the", "punctuated_word": "the", "start": 4.000, "end": 4.200, "confidence": 0.99, "speaker": 0 },
+        { "word": "show", "punctuated_word": "show.", "start": 4.200, "end": 5.000, "confidence": 0.98, "speaker": 0 }
+      ]
+    }
+  ]
+}

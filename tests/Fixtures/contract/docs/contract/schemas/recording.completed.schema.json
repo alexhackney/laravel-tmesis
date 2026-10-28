@@ -1,0 +1,186 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/RecordingCompleted",
+  "$defs": {
+    "RecordingCompleted": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "recording.completed"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "The session this recording belongs to. As built one recording_id is one file in one session; a hold closes it (reason input_lost) and the rejoin opens the next part under a new recording_id in the same session. Correlate on recording_id."
+        },
+        "epoch": {
+          "type": "integer"
+        },
+        "recording_id": {
+          "type": "string"
+        },
+        "artifact": {
+          "type": "string",
+          "enum": [
+            "ingest",
+            "master"
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "finalized"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "CLOSED set: what ended the capture. input_lost is the part closed when the publisher left and the session was held (final plan 11.38): the file is complete and clean to that point, and a rejoin opens the next part as its own row. Added 2026-09-18, additive like the flv container widening. master_finished (tmesis v0.8.0, D37) is the told master's remux having made its MP4; it is the only reason a master's recording.completed carries.",
+          "enum": [
+            "publisher_stop",
+            "api_stop",
+            "stream_sealed",
+            "node_drain",
+            "error",
+            "input_lost",
+            "master_finished"
+          ]
+        },
+        "parts": {
+          "type": "integer",
+          "description": "Always 1: one row is one file and nothing is stitched (final plan 11.34 D4, 11.38). A rejoin after a hold opens a new row rather than a longer file, so this never counts a session's parts.",
+          "const": 1
+        },
+        "path": {
+          "type": "string"
+        },
+        "container": {
+          "type": "string",
+          "description": "The finalized container. For the ingest artifact it is ALWAYS the capture container (mpegts or flv): the ingest copy is never remuxed, at capture or at finalize (final plan 11.34 D1). mp4 is the told master, a faststart MP4 joined from its sources (since v0.8.0).",
+          "enum": [
+            "mp4",
+            "mpegts",
+            "flv",
+            "none"
+          ]
+        },
+        "capture_container": {
+          "type": "string",
+          "description": "What it was written as while live; for the told master, its sources' capture container.",
+          "enum": [
+            "mpegts",
+            "flv",
+            "fmp4"
+          ]
+        },
+        "bytes": {
+          "type": "integer"
+        },
+        "dropped_bytes_total": {
+          "type": "integer",
+          "description": "Non-zero means writes were shed, the file is incomplete, and a recording.degraded explained why."
+        },
+        "duration_seconds": {
+          "type": "number",
+          "description": "Wall clock from open to close for the ingest artifact (neither container is parsed), so a file with shed writes reads a FULL duration here and a shorter one in a player; dropped_bytes_total is the number that says so."
+        },
+        "started_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, docs/API.md section 4"
+        },
+        "ended_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, docs/API.md section 4"
+        },
+        "checksum_sha256": {
+          "type": "string",
+          "description": "Of the finalized file as written locally, so the destination copy can be verified independently."
+        },
+        "destination": {
+          "description": "The stream's effective directory at finalize. null means local, or held on a destination_ref (WEBHOOKS.md 8.14).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retention_expires_at": {
+          "description": "ALWAYS null on this event. Retention counts from registration, never from finalize, and nothing is registered yet; recording.registered (8.14) carries the real value. The schema pins this with const:null so a receiver that mistakenly trusted a timestamp would learn at the schema, not at 3am.",
+          "const": null
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "source_generations": {
+          "type": "array",
+          "description": "The told master's source generations (recording_ingest) in join order. Always [] for the ingest artifact.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "recording_id",
+        "artifact",
+        "state",
+        "reason",
+        "parts",
+        "path",
+        "container",
+        "capture_container",
+        "bytes",
+        "dropped_bytes_total",
+        "duration_seconds",
+        "started_at",
+        "ended_at",
+        "checksum_sha256",
+        "destination",
+        "retention_expires_at",
+        "labels",
+        "source_generations"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

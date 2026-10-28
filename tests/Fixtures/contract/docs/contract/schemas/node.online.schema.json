@@ -1,0 +1,254 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/NodeOnline",
+  "$defs": {
+    "NodeCapacity": {
+      "type": "object",
+      "properties": {
+        "encode_slots_total": {
+          "type": "integer",
+          "description": "Live units while admission is on; 0 while it is off or not applicable, which means nobody measured, never no capacity."
+        },
+        "admission": {
+          "type": "string",
+          "description": "Live unit admission, the health live_capacity.admission value: on refuses past encode_slots_total, off admits every publish and still counts, not_applicable is a node that does not encode live.",
+          "enum": [
+            "on",
+            "off",
+            "not_applicable"
+          ]
+        },
+        "uplink_mbps": {
+          "type": "integer"
+        },
+        "disk_free_bytes": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "encode_slots_total",
+        "admission",
+        "uplink_mbps",
+        "disk_free_bytes"
+      ],
+      "additionalProperties": false
+    },
+    "NodeJobsPause": {
+      "type": "object",
+      "properties": {
+        "until": {
+          "description": "When the pause ends by itself; null until cleared.",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "RFC3339 UTC, docs/API.md section 4"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "fleet: the control plane's desired state. api: PUT /api/v1/transcode/pause.",
+          "enum": [
+            "fleet",
+            "api"
+          ]
+        }
+      },
+      "required": [
+        "until",
+        "reason",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "NodeListeners": {
+      "type": "object",
+      "properties": {
+        "rtmp": {
+          "type": "string"
+        },
+        "srt": {
+          "type": "string"
+        },
+        "api": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "rtmp",
+        "srt",
+        "api"
+      ],
+      "additionalProperties": false
+    },
+    "NodeOnline": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "node.online"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "version": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, docs/API.md section 4"
+        },
+        "config_source": {
+          "type": "string"
+        },
+        "orphans_reaped": {
+          "type": "integer",
+          "description": "Sessions left open by a previous process and closed by the boot sweep: a session a crash left, and, since v0.8.0, a session a drain held for this start (its window is restored). A non-zero count does not by itself mean the last process crashed."
+        },
+        "capacity": {
+          "$ref": "#/$defs/NodeCapacity"
+        },
+        "listeners": {
+          "$ref": "#/$defs/NodeListeners"
+        },
+        "video_engine": {
+          "description": "The live ladder's encoder, the health video_engine block. Null on a node that encodes no live stream (no default ladder, or the transcoder role).",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NodeVideoEngine"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "jobs_video_engine": {
+          "description": "The VOD job encoder (jobs.video_encoder), the same fields. Null when jobs are off.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NodeVideoEngine"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "jobs_pause": {
+          "description": "The jobs pause in force when the node came up (restored from the journal), the health jobs.paused block. Null when no pause is active. A restored pause emits no jobs.paused: this field is how a receiver learns of it.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/NodeJobsPause"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "version",
+        "started_at",
+        "config_source",
+        "orphans_reaped",
+        "capacity",
+        "listeners",
+        "video_engine",
+        "jobs_video_engine",
+        "jobs_pause"
+      ],
+      "additionalProperties": false
+    },
+    "NodeVideoEngine": {
+      "type": "object",
+      "properties": {
+        "encoder": {
+          "type": "string",
+          "description": "The ffmpeg encoder the workload is built with; under a failed pin, the pin."
+        },
+        "preset": {
+          "type": "string"
+        },
+        "accelerator": {
+          "type": "string",
+          "enum": [
+            "none",
+            "nvenc",
+            "qsv"
+          ]
+        },
+        "placement": {
+          "type": "string",
+          "enum": [
+            "none",
+            "discrete",
+            "integrated",
+            "unknown"
+          ]
+        },
+        "fell_back_with_device_available": {
+          "type": "boolean"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "requested": {
+          "type": "string",
+          "enum": [
+            "auto",
+            "libx264",
+            "h264_nvenc",
+            "h264_qsv"
+          ]
+        },
+        "usable": {
+          "type": "boolean",
+          "description": "False only for a pin that failed at boot: the workload is refused until it is repaired or set to auto and tmesis restarts."
+        }
+      },
+      "required": [
+        "encoder",
+        "preset",
+        "accelerator",
+        "placement",
+        "fell_back_with_device_available",
+        "reason",
+        "requested",
+        "usable"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

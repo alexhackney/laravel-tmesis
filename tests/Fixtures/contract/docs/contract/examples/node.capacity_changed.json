@@ -1,0 +1,47 @@
+{
+  "event": "node.capacity_changed",
+  "delivery": "01J8ZCB7Q4M2NWX8VK5TRD3PH6",
+  "occurred_at": "2026-08-28T19:14:02.318Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "reason": "admission",
+  "full": true,
+  "live_capacity": {
+    "admission": "on",
+    "source": "measured",
+    "unit_ladder": "production",
+    "encode_slots_total": 7,
+    "encode_slots_used": 7,
+    "device_sessions_total": null,
+    "device_sessions_used": 0,
+    "measured_at": "2026-08-27T03:40:12Z"
+  },
+  "jobs_capacity": {
+    "slots": 2,
+    "source": "measured"
+  },
+  "video_engine": {
+    "encoder": "libx264",
+    "preset": "veryfast",
+    "accelerator": "none",
+    "placement": "none",
+    "fell_back_with_device_available": false,
+    "reason": "no acceleration device on this box",
+    "requested": "auto",
+    "usable": true
+  },
+  "jobs_video_engine": {
+    "encoder": "libx264",
+    "preset": "veryfast",
+    "accelerator": "none",
+    "placement": "none",
+    "fell_back_with_device_available": false,
+    "reason": "no acceleration device on this box",
+    "requested": "auto",
+    "usable": true
+  },
+  "previous": {
+    "encode_slots_used": 6
+  }
+}

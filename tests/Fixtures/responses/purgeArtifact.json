@@ -1,0 +1,15 @@
+{
+  "request_id": "01J8ZCR2N5T8QWX1VM7RKB3PD4",
+  "generation": "01J8ZCK5R7V2QNX8RW4TKB6PD2",
+  "plan_revision": 2,
+  "action": "release",
+  "actor": "admin_token",
+  "reason": "Copied to tsp-media; free the disk now",
+  "waived_targets": [],
+  "current": true,
+  "release_state": "released",
+  "retention_expires_at": "2026-09-25T21:47:02.334Z",
+  "created_at": "2026-09-22T22:15:00.000Z",
+  "purge_requested_at": "2026-09-22T22:20:00.000Z",
+  "purge_reason": "Copied to tsp-media; free the disk now"
+}

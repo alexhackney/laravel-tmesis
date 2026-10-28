@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/MarkerPlaced",
+  "$defs": {
+    "MarkerPlaced": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "marker.placed"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "The publish session whose playlists carry the tag."
+        },
+        "epoch": {
+          "type": "integer",
+          "description": "The SESSION epoch, as on every stream event."
+        },
+        "marker": {
+          "type": "string",
+          "description": "The marker id: the tag's ID."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "out",
+            "in"
+          ]
+        },
+        "class": {
+          "type": "string",
+          "description": "The tag's CLASS."
+        },
+        "duration_seconds": {
+          "description": "The DURATION the tag carries, null for none.",
+          "oneOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "scte35": {
+          "description": "The caller's splice_info_section as upper case hex without 0x, null for none.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "start_date": {
+          "type": "string",
+          "description": "The tag's START-DATE, RFC3339 UTC, the same on every rendition: the boundary the next cut closed for a now marker, the told instant otherwise."
+        },
+        "complete": {
+          "type": "boolean",
+          "description": "Every media rendition carries the tag. false when the session drained first."
+        },
+        "placements": {
+          "type": "array",
+          "description": "One per rendition carrying the tag, in rendition order.",
+          "items": {
+            "$ref": "#/$defs/MarkerPlacement"
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "marker",
+        "kind",
+        "class",
+        "duration_seconds",
+        "scte35",
+        "start_date",
+        "complete",
+        "placements",
+        "labels"
+      ],
+      "additionalProperties": false
+    },
+    "MarkerPlacement": {
+      "type": "object",
+      "properties": {
+        "rendition": {
+          "type": "string",
+          "description": "The rung whose live, DVR and replay playlists carry the tag."
+        },
+        "segment_index": {
+          "type": "integer",
+          "description": "The segment the tag was written in front of: its file name under \u003crung\u003e/."
+        },
+        "media_sequence": {
+          "type": "integer",
+          "description": "That segment's media sequence number."
+        },
+        "program_date_time": {
+          "type": "string",
+          "description": "That segment's EXT-X-PROGRAM-DATE-TIME, RFC3339 UTC."
+        }
+      },
+      "required": [
+        "rendition",
+        "segment_index",
+        "media_sequence",
+        "program_date_time"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

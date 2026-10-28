@@ -1,0 +1,309 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/JobCompleted",
+  "$defs": {
+    "JobCompleted": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "job.completed"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "job": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "completed"
+          ]
+        },
+        "duration_seconds": {
+          "type": "number",
+          "description": "The source's media duration."
+        },
+        "encode_seconds": {
+          "type": "number",
+          "description": "Wall time the encode stage took."
+        },
+        "attempts": {
+          "type": "integer"
+        },
+        "evictions": {
+          "type": "integer"
+        },
+        "source": {
+          "$ref": "#/$defs/JobSourceReport"
+        },
+        "outputs": {
+          "type": "array",
+          "description": "One per requested output in the order submitted (an mp4 output one per rung).",
+          "items": {
+            "$ref": "#/$defs/JobOutputReport"
+          }
+        },
+        "probe": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/JobProbeSummary"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "job",
+        "state",
+        "duration_seconds",
+        "encode_seconds",
+        "attempts",
+        "evictions",
+        "source",
+        "outputs",
+        "probe",
+        "labels"
+      ],
+      "additionalProperties": false
+    },
+    "JobError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "The failure, from API.md 9.11's closed vocabulary (source_unreadable, source_changed, source_unsupported, disk_insufficient, package_incomplete, timeout, cancelled, ...)."
+        },
+        "class": {
+          "type": "string",
+          "description": "permanent is never retried by the node or the control plane; transient was already retried by the node up to jobs.max_attempts.",
+          "enum": [
+            "permanent",
+            "transient"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string",
+          "description": "The stage it happened in. Absent for a failure outside any stage (a cancel of a queued job).",
+          "enum": [
+            "fetch",
+            "probe",
+            "audio",
+            "encode",
+            "package",
+            "thumbnails",
+            "transcribe",
+            "upload",
+            "verify"
+          ]
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "Whether resubmitting the same job could succeed."
+        }
+      },
+      "required": [
+        "code",
+        "class",
+        "message",
+        "retryable"
+      ],
+      "additionalProperties": false
+    },
+    "JobOutputReport": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "hls_ladder",
+            "mp4",
+            "audio",
+            "thumbnails",
+            "probe",
+            "transcript"
+          ]
+        },
+        "generation": {
+          "description": "The output's artifact generation (a ULID), null until it is created.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "state": {
+          "type": "string",
+          "description": "pending: not started; held: being written locally; finalized: inventory frozen and its told targets filed as revision 1; completed: every object of that plan delivered (landed); failed: an optional output that failed (error says why) or the required one the job failed on.",
+          "enum": [
+            "pending",
+            "held",
+            "finalized",
+            "completed",
+            "failed"
+          ]
+        },
+        "url": {
+          "type": "string",
+          "description": "Where the output lands at its FIRST told target, s3://\u003cbucket\u003e/\u003ckey\u003e: the HLS entry names the asset's master (playlist.m3u8 unless told otherwise), an mp4 entry its rung's file, a thumbnails entry the prefix. A report: the filed plan is where the bytes go."
+        },
+        "rung": {
+          "type": "string",
+          "description": "mp4: the ladder rung this entry is."
+        },
+        "bytes": {
+          "type": "integer",
+          "description": "The output's size once finalized."
+        },
+        "count": {
+          "type": "integer",
+          "description": "thumbnails: images written."
+        },
+        "mode_counts": {
+          "type": "object",
+          "description": "thumbnails: images per selection mode (interval, at_seconds, at_percent, random), before deduplication.",
+          "additionalProperties": {
+            "type": "integer"
+          }
+        },
+        "seed": {
+          "type": "integer",
+          "description": "thumbnails: the random_count seed, so the pick is reproducible."
+        },
+        "format": {
+          "type": "string",
+          "description": "audio: aac, mp3 or opus."
+        },
+        "language": {
+          "type": "string",
+          "description": "transcript: the language transcribed."
+        },
+        "provider": {
+          "description": "transcript: the batch provider that transcribed it; absent when no provider answered and on every other kind.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "video_only": {
+          "type": "boolean",
+          "description": "hls_ladder or mp4 from a source with no audio: the master names no audio group and the MP4 has no audio track."
+        },
+        "error": {
+          "$ref": "#/$defs/JobError",
+          "description": "Why this output failed. An optional output (audio, thumbnails, transcript) may fail while the job completes."
+        }
+      },
+      "required": [
+        "kind",
+        "generation",
+        "state"
+      ],
+      "additionalProperties": false
+    },
+    "JobProbeSummary": {
+      "type": "object",
+      "properties": {
+        "video": {
+          "description": "codec WxH pix_fmt fps; null for a source with no video.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "audio": {
+          "description": "codec rate layout; null for a source with no audio.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration_seconds": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "video",
+        "audio",
+        "duration_seconds"
+      ],
+      "additionalProperties": false
+    },
+    "JobSourceReport": {
+      "type": "object",
+      "properties": {
+        "destination_ref": {
+          "type": "string",
+          "description": "The storage.destinations entry the source was read from, with key."
+        },
+        "key": {
+          "type": "string",
+          "description": "The source object's key in that destination."
+        },
+        "url": {
+          "type": "string",
+          "description": "The HTTPS source, with its query string (a presigned signature) removed."
+        },
+        "bytes": {
+          "type": "integer",
+          "description": "The source's size once the fetch learned it; absent while unknown."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

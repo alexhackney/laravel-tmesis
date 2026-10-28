@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "kind": "tmesis.webhook-signature-vectors",
+  "readme": [
+    "Shared HMAC test vectors for Tmesis webhook signatures (final plan 6.4,",
+    "docs/WEBHOOKS.md section 10). The sibling of keys.json, which covers the",
+    "publish-key half of the same agreement.",
+    "",
+    "WHY THIS FILE EXISTS. Two implementations must agree byte for byte: Tmesis",
+    "SIGNS every webhook and tsp-web VERIFIES it. A disagreement about the",
+    "separator, the encoding, or the hex case rejects every webhook on the",
+    "platform, and it does so at 8pm on a show night rather than in CI. Both sides",
+    "assert against THIS file.",
+    "",
+    "THE RULE THAT MAKES IT WORK. The fixture is generated from the Go",
+    "implementation (go test ./internal/webhook -update) and a client NEVER edits",
+    "it. A client that cannot reproduce a row has a bug, and that is the finding,",
+    "not a reason to adjust the expected value. A shared fixture either side may",
+    "rewrite is not a contract, it is a diary.",
+    "",
+    "HOW TO USE IT. For every entry in cases[]: decode secret_hex and body_hex to",
+    "bytes, build the signed string as timestamp + \".\" + body (one 0x2E, nothing",
+    "else), compute HMAC-SHA256 over it, hex encode lowercase, prefix with",
+    "\"sha256=\", and assert the result equals signature. Assert your signed string",
+    "is signed_string_length bytes first: a length mismatch finds your bug before",
+    "any MAC is computed.",
+    "",
+    "THE NEGATIVE ROWS ARE THE USEFUL PART. Every entry in negative[] is a value a",
+    "CORRECT implementation must NOT produce, paired with the mistake that",
+    "produces it. If your code emits one of these, the mistake field names your",
+    "bug. They are computed over the section 4.1 example's inputs.",
+    "",
+    "ENCODING NOTES. secret_hex and body_hex are authoritative and are the only",
+    "forms that can carry bytes which are not valid UTF-8; secret_utf8 and body",
+    "appear for readability. timestamp is used as its ASCII characters: do not",
+    "parse it to an integer and re-format it."
+  ],
+  "format": {
+    "body": "the exact bytes on the wire, never a re-serialisation. A receiver that parses the JSON and re-encodes it before verifying will fail",
+    "comparison": "constant time, over the FULL header value including the sha256= prefix, never a prefix of it",
+    "mac": "HMAC-SHA256(key = secret, message = signed_string), 32 raw bytes",
+    "secret": "used as its raw bytes exactly as configured: not base64-decoded, not hex-decoded, and NOT trimmed",
+    "signature": "the literal \"sha256=\" followed by mac as 64 LOWERCASE hex characters. No uppercase, no separators, no base64",
+    "signed_string": "timestamp bytes, then one 0x2E, then body bytes. Nothing else joins them: no newline, no colon, no length prefix, no space",
+    "timestamp": "the X-Tmesis-Timestamp header value: decimal Unix seconds, no fractional part, no leading zeros, no sign. PER ATTEMPT, not per event"
+  },
+  "cases": [
+    {
+      "name": "the docs/WEBHOOKS.md section 4.1 worked example",
+      "secret_utf8": "whsec_tmesis_docs_example",
+      "secret_hex": "77687365635f746d657369735f646f63735f6578616d706c65",
+      "timestamp": "1787944321",
+      "body": "{\"event\":\"stream.published\",\"delivery\":\"01J8ZC9GQ2M4YE7XW1RN0P6VTB\",\"occurred_at\":\"2026-08-28T19:12:01.482Z\",\"node\":\"edge-venue-07\",\"node_role\":\"edge\",\"contract_version\":1,\"stream\":\"show-2041-main\",\"session\":\"01J8ZC8XKWQ4M7T0K3PZ2B9RVN\",\"epoch\":3,\"protocol\":\"srt\"}",
+      "body_hex": "7b226576656e74223a2273747265616d2e7075626c6973686564222c2264656c6976657279223a2230314a385a43394751324d34594537585731524e305036565442222c226f636375727265645f6174223a22323032362d30382d32385431393a31323a30312e3438325a222c226e6f6465223a22656467652d76656e75652d3037222c226e6f64655f726f6c65223a2265646765222c22636f6e74726163745f76657273696f6e223a312c2273747265616d223a2273686f772d323034312d6d61696e222c2273657373696f6e223a2230314a385a4338584b5751344d3754304b33505a32423952564e222c2265706f6368223a332c2270726f746f636f6c223a22737274227d",
+      "signed_string_length": 275,
+      "signature": "sha256=c54cb54c5cb7b8a75f4867740f096eb41093e06ad9f3501b62f2205f8b8868c7"
+    },
+    {
+      "name": "an empty body, which is still a signable request",
+      "secret_utf8": "whsec_tmesis_docs_example",
+      "secret_hex": "77687365635f746d657369735f646f63735f6578616d706c65",
+      "timestamp": "1787944321",
+      "body": "",
+      "body_hex": "",
+      "signed_string_length": 11,
+      "signature": "sha256=c5c63ab9e13c88c4bf62b0ba95800a31027aa8910b56ef347a1e89a31e508bca"
+    },
+    {
+      "name": "a body that begins with the separator byte",
+      "secret_utf8": "whsec_tmesis_docs_example",
+      "secret_hex": "77687365635f746d657369735f646f63735f6578616d706c65",
+      "timestamp": "1787944321",
+      "body": ".{\"event\":\"stream.live\"}",
+      "body_hex": "2e7b226576656e74223a2273747265616d2e6c697665227d",
+      "signed_string_length": 35,
+      "signature": "sha256=a4e4bd84c54a7cc7a5a9adebfdcd8277898c557b3f8e0b70119c1da81c638e0f"
+    },
+    {
+      "name": "a secret with a trailing newline, which is a DIFFERENT secret",
+      "secret_hex": "77687365635f746d657369735f646f63735f6578616d706c650a",
+      "timestamp": "1787944321",
+      "body": "{\"event\":\"stream.published\",\"delivery\":\"01J8ZC9GQ2M4YE7XW1RN0P6VTB\",\"occurred_at\":\"2026-08-28T19:12:01.482Z\",\"node\":\"edge-venue-07\",\"node_role\":\"edge\",\"contract_version\":1,\"stream\":\"show-2041-main\",\"session\":\"01J8ZC8XKWQ4M7T0K3PZ2B9RVN\",\"epoch\":3,\"protocol\":\"srt\"}",
+      "body_hex": "7b226576656e74223a2273747265616d2e7075626c6973686564222c2264656c6976657279223a2230314a385a43394751324d34594537585731524e305036565442222c226f636375727265645f6174223a22323032362d30382d32385431393a31323a30312e3438325a222c226e6f6465223a22656467652d76656e75652d3037222c226e6f64655f726f6c65223a2265646765222c22636f6e74726163745f76657273696f6e223a312c2273747265616d223a2273686f772d323034312d6d61696e222c2273657373696f6e223a2230314a385a4338584b5751344d3754304b33505a32423952564e222c2265706f6368223a332c2270726f746f636f6c223a22737274227d",
+      "signed_string_length": 275,
+      "signature": "sha256=365fe6d4efe1ee66810a1003b58309d1b994d82d04a0f9b1cab1e9d030966caf"
+    },
+    {
+      "name": "a body carrying multi-byte UTF-8",
+      "secret_utf8": "whsec_tmesis_docs_example",
+      "secret_hex": "77687365635f746d657369735f646f63735f6578616d706c65",
+      "timestamp": "1787944400",
+      "body": "{\"event\":\"stream.published\",\"labels\":{\"venue\":\"København\"}}",
+      "body_hex": "7b226576656e74223a2273747265616d2e7075626c6973686564222c226c6162656c73223a7b2276656e7565223a224bc3b862656e6861766e227d7d",
+      "signed_string_length": 71,
+      "signature": "sha256=2357941ae3c572b0aa73936715370ee2ab79b6c2eab59fc4967cea744b9af17c"
+    },
+    {
+      "name": "a long timestamp, to prove the length is not assumed",
+      "secret_utf8": "whsec_tmesis_docs_example",
+      "secret_hex": "77687365635f746d657369735f646f63735f6578616d706c65",
+      "timestamp": "19999999999",
+      "body": "{\"event\":\"node.online\"}",
+      "body_hex": "7b226576656e74223a226e6f64652e6f6e6c696e65227d",
+      "signed_string_length": 35,
+      "signature": "sha256=02af0c6e66c43497ee3f7661b94c86eba9bf0e8ee599a0c38562f55091d31f50"
+    }
+  ],
+  "negative": [
+    {
+      "name": "the timestamp left out of the signed string",
+      "signature": "sha256=e8473e9dcea853b314e8e652137eca72d44b7e30f6bb5883b062259e21365d78",
+      "mistake": "You signed the body alone. The signed string is timestamp + \".\" + body."
+    },
+    {
+      "name": "the separator forgotten",
+      "signature": "sha256=feea1415e378df80487e54da4e79a0f9688752a2fa4c15a77c8f5cbcbdff53f2",
+      "mistake": "You concatenated the timestamp and the body with nothing between them. The separator is exactly one ASCII full stop, 0x2E."
+    },
+    {
+      "name": "a secret with a trailing newline",
+      "signature": "sha256=365fe6d4efe1ee66810a1003b58309d1b994d82d04a0f9b1cab1e9d030966caf",
+      "mistake": "Your secret has a trailing newline, almost certainly from a .env file or an echo into a file. It is a different secret than you think you have."
+    },
+    {
+      "name": "hashed instead of HMAC'd",
+      "signature": "sha256=0e144ccb23d51c9cd8b4f52ce426564f139b2247e27d778df1075e4869416e55",
+      "mistake": "You hashed the body instead of computing an HMAC over the signed string."
+    },
+    {
+      "name": "uppercase hex",
+      "signature": "SHA256=C54CB54C5CB7B8A75F4867740F096EB41093E06AD9F3501B62F2205F8B8868C7",
+      "mistake": "Your hex encoder emits uppercase. The header value is 64 LOWERCASE hex characters."
+    },
+    {
+      "name": "the sha256= prefix omitted",
+      "signature": "c54cb54c5cb7b8a75f4867740f096eb41093e06ad9f3501b62f2205f8b8868c7",
+      "mistake": "You sent the bare hex. The prefix names the algorithm so a future one can be added without breaking parsing, and a receiver must reject a prefix it does not recognise rather than guessing."
+    }
+  ]
+}

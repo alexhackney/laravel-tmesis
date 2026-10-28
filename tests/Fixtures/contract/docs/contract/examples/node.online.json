@@ -1,0 +1,30 @@
+{
+  "event": "node.online",
+  "delivery": "01J8ZCV6R2K8NQX4WM7TVB5PD9",
+  "occurred_at": "2026-08-27T04:11:52.006Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "version": "1.4.0",
+  "started_at": "2026-08-27T04:11:49.88Z",
+  "config_source": "search_path",
+  "orphans_reaped": 0,
+  "capacity": {
+    "encode_slots_total": 6,
+    "admission": "on",
+    "uplink_mbps": 1000,
+    "disk_free_bytes": 412316860416
+  },
+  "listeners": {
+    "rtmp": ":1935",
+    "srt": ":6001",
+    "api": "127.0.0.1:7000"
+  },
+  "video_engine": null,
+  "jobs_video_engine": null,
+  "jobs_pause": {
+    "until": "2026-08-27T06:00:00Z",
+    "reason": "maintenance window",
+    "source": "fleet"
+  }
+}

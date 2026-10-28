@@ -1,0 +1,80 @@
+{
+  "event": "stream.live",
+  "delivery": "01J8ZCE9M3K7QW2XVR5NB8TDH4",
+  "occurred_at": "2026-08-28T19:12:14.902Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "epoch": 3,
+  "delivery_mode": "bucket",
+  "playback": {
+    "master": "https://cdn.example.com/hls/show-2041-main/playlist_dvr.m3u8",
+    "renditions": {
+      "480p": "https://cdn.example.com/hls/show-2041-main/480p_dvr.m3u8",
+      "720p": "https://cdn.example.com/hls/show-2041-main/720p_dvr.m3u8",
+      "audio": "https://cdn.example.com/hls/show-2041-main/audio_dvr.m3u8"
+    },
+    "preview": {
+      "whep_path": "/whep/v1/streams/show-2041-main",
+      "whep_url": "https://box.example.com:8889/whep/v1/streams/show-2041-main"
+    },
+    "captions": {
+      "en": {
+        "playlist": "https://cdn.example.com/hls/show-2041-main/captions_en_dvr.m3u8",
+        "vtt": null,
+        "srt": null,
+        "json": null
+      }
+    }
+  },
+  "first_segment": {
+    "media_sequence": 0,
+    "program_date_time": "2026-08-28T19:12:08Z",
+    "duration_seconds": 6.006
+  },
+  "ladder": "broadcast-720p",
+  "ladder_resolved": {
+    "source": {
+      "codec": "h264",
+      "width": 1920,
+      "height": 1080,
+      "fps": "30000/1001",
+      "audio_codec": null,
+      "bitrate_bps": 5943000,
+      "probed_at": "2026-08-28T19:12:02.104Z",
+      "probe_ms": 412
+    },
+    "rungs": [
+      {
+        "name": "720p",
+        "width": 1280,
+        "height": 720,
+        "fps": "30000/1001",
+        "audio_only": false
+      },
+      {
+        "name": "480p",
+        "width": 854,
+        "height": 480,
+        "fps": "30000/1001",
+        "audio_only": false
+      },
+      {
+        "name": "audio",
+        "width": 0,
+        "height": 0,
+        "fps": "",
+        "audio_only": true
+      }
+    ],
+    "notes": [
+      "rung 720p: rate 60000/1001 capped to 30000/1001 (source 30000/1001)"
+    ]
+  },
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  }
+}

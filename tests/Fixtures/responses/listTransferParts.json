@@ -1,0 +1,31 @@
+{
+  "items": [
+    {
+      "part_number": 100,
+      "offset_bytes": 1660944384,
+      "size_bytes": 16777216,
+      "checksum_sha256": "0a1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f9",
+      "state": "complete",
+      "attempts": 1,
+      "etag": "\"7ac66c0f148de9519b8bd264312c4d64\"",
+      "completed_at": "2026-09-22T22:20:03.441Z",
+      "error": null
+    },
+    {
+      "part_number": 101,
+      "offset_bytes": 1677721600,
+      "size_bytes": 16777216,
+      "checksum_sha256": "1b2c3d4e5f60718293a4b5c6d7e8f90a1b2c3d4e5f60718293a4b5c6d7e8f90a",
+      "state": "waiting_authorization",
+      "attempts": 0,
+      "etag": null,
+      "completed_at": null,
+      "error": {
+        "code": "authorization_missing",
+        "message": "Supply signed requests for the current multipart upload"
+      }
+    }
+  ],
+  "limit": 100,
+  "next_cursor": null
+}

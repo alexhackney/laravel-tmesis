@@ -1,0 +1,160 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/ArtifactDeleted",
+  "$defs": {
+    "ArtifactDeleted": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "artifact.deleted"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "description": "The stream the generation came from; null for a job generation, which names job_id instead.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session": {
+          "description": "The publish session the generation came from; null for a job generation.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session_epoch": {
+          "description": "The session's epoch, the publish identity. Not the fencing epoch. Null for a job generation.",
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "job_id": {
+          "description": "The transcode job a JOB generation belongs to (P10); null for a stream's. Its events route to the job's callback_url.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "generation": {
+          "type": "string",
+          "description": "The immutable output generation (a ULID). Every artifact route and event keys on this."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "hls_sealed",
+            "recording_ingest",
+            "recording_master",
+            "job_hls",
+            "job_mp4",
+            "job_audio",
+            "job_thumbnails",
+            "job_probe",
+            "job_transcript"
+          ]
+        },
+        "inventory_sha256": {
+          "type": "string",
+          "description": "SHA-256 of the generation's committed inventory, 64 lowercase hex digits."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "plan_revision": {
+          "type": "integer",
+          "description": "The revision whose decision authorised the retirement."
+        },
+        "request_id": {
+          "type": "string",
+          "description": "That decision's request id."
+        },
+        "deleted_at": {
+          "type": "string",
+          "description": "When the last local entry was removed; the retirement's completion commit."
+        },
+        "purge": {
+          "type": "boolean",
+          "description": "true when an explicit operator purge (POST .../purge, tmesis artifacts purge) retired the generation, before its retention deadline when that had not passed; false for a retirement at the deadline."
+        },
+        "purge_reason": {
+          "description": "The purge's reason, 1 to 1024 bytes; null when purge is false.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "session_epoch",
+        "job_id",
+        "generation",
+        "kind",
+        "inventory_sha256",
+        "labels",
+        "plan_revision",
+        "request_id",
+        "deleted_at",
+        "purge",
+        "purge_reason"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

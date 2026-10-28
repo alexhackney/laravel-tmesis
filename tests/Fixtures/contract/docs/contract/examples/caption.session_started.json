@@ -1,0 +1,21 @@
+{
+  "event": "caption.session_started",
+  "delivery": "01J8ZCM8T4N9QWX3VR6KMB2PD7",
+  "occurred_at": "2026-08-28T19:12:16.226Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "epoch": 3,
+  "lang": "en",
+  "provider": "deepgram",
+  "provider_request_id": "6f1c2a8e-4b3d-4e5f-9a7b-8c9d0e1f2a3b",
+  "resumed_after": null,
+  "switched_from": null,
+  "fallback": false,
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  }
+}

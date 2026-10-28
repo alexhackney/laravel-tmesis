@@ -1,0 +1,276 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/HeartbeatRequest",
+  "$defs": {
+    "HeartbeatEvent": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable across retries. It is the dedupe key."
+        },
+        "event": {
+          "type": "string",
+          "description": "The event name, the same vocabulary docs/WEBHOOKS.md 8.2 defines."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC. ORDER BY THIS, never by arrival."
+        },
+        "payload": {
+          "type": "string",
+          "description": "The event body as a JSON string, so one batch can carry several event shapes without this document depending on all of them."
+        }
+      },
+      "required": [
+        "id",
+        "event",
+        "occurred_at",
+        "payload"
+      ],
+      "additionalProperties": false
+    },
+    "HeartbeatRequest": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "version": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string",
+          "description": "RFC3339 UTC. Process start, so the control plane can tell a restart from a network gap."
+        },
+        "observed_at": {
+          "type": "string",
+          "description": "RFC3339 UTC. When the node built this body, not when it was received."
+        },
+        "desired_revision_applied": {
+          "type": "integer",
+          "description": "The last revision this node applied transactionally under its current enrollment, 0 when none. The control plane resends until this matches.",
+          "minimum": 0
+        },
+        "admission": {
+          "type": "string",
+          "description": "Whether this node admits new publishes and jobs. draining is in place with the process up (D3).",
+          "enum": [
+            "open",
+            "draining",
+            "shutting_down"
+          ]
+        },
+        "revocations_digest": {
+          "type": "string",
+          "description": "Lowercase hex SHA-256 of the revocation list in force: sorted, deduplicated, newline-joined, no trailing newline (docs/API.md 15.2). The control plane resends the desired state at the same revision when this differs from the digest of the list it intends."
+        },
+        "desired_revision_rejected": {
+          "description": "The newest revision this node refused and why, or null when the latest revision it was sent applied.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/RejectedRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "stats": {
+          "$ref": "#/$defs/NodeStats"
+        },
+        "streams": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/StreamState"
+          }
+        },
+        "events": {
+          "type": "array",
+          "description": "A BOUNDED batch from the durable fleet queue. Bounded by count and by bytes: a receiver that was down for a day must not be answered with a day of history in one body.",
+          "items": {
+            "$ref": "#/$defs/HeartbeatEvent"
+          }
+        },
+        "acked_command_ids": {
+          "type": "array",
+          "description": "Ids of commands this node has completed. A command is re-sent until its id appears here.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "jobs_pause": {
+          "description": "The jobs pause in force on this node, or null when none is active. Read from the committed journal row, so the first beat after a restart already carries it. Set by the control plane (source fleet), or by the pause route before the box joined (source api) until the first desired-state revision replaces it.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/JobsPauseState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "node",
+        "role",
+        "version",
+        "started_at",
+        "observed_at",
+        "desired_revision_applied",
+        "admission",
+        "revocations_digest",
+        "desired_revision_rejected",
+        "stats",
+        "streams",
+        "events",
+        "acked_command_ids",
+        "jobs_pause"
+      ],
+      "additionalProperties": false
+    },
+    "JobsPauseState": {
+      "type": "object",
+      "properties": {
+        "until": {
+          "description": "RFC 3339 UTC: when the pause ends by itself; null until cleared.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "fleet: the control plane's desired state. api: PUT /api/v1/transcode/pause on the box.",
+          "enum": [
+            "fleet",
+            "api"
+          ]
+        }
+      },
+      "required": [
+        "until",
+        "reason",
+        "source"
+      ],
+      "additionalProperties": false
+    },
+    "NodeStats": {
+      "type": "object",
+      "properties": {
+        "uptime_seconds": {
+          "type": "integer"
+        },
+        "sessions_active": {
+          "type": "integer"
+        },
+        "disk_free_bytes": {
+          "type": "integer"
+        },
+        "disk_floor_breached": {
+          "type": "boolean",
+          "description": "true means free space is below limits.disk_floor_gb. The node reports and alerts; it does not delete an unregistered archive to clear it."
+        },
+        "outbox_depth": {
+          "type": "integer",
+          "description": "Undelivered webhook rows. A rising depth with a healthy node means the RECEIVER is down."
+        },
+        "recordings_unregistered": {
+          "type": "integer",
+          "description": "Finalized artifacts still waiting on registration. tmesis leave refuses while this is non-zero (final plan 11.19)."
+        }
+      },
+      "required": [
+        "uptime_seconds",
+        "sessions_active",
+        "disk_free_bytes",
+        "disk_floor_breached",
+        "outbox_depth",
+        "recordings_unregistered"
+      ],
+      "additionalProperties": false
+    },
+    "RejectedRevision": {
+      "type": "object",
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "revision",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "StreamState": {
+      "type": "object",
+      "properties": {
+        "stream": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "idle",
+            "publishing",
+            "live",
+            "draining",
+            "sealed"
+          ]
+        },
+        "session": {
+          "type": "string",
+          "description": "Empty when nothing is attached."
+        },
+        "epoch": {
+          "type": "integer",
+          "description": "The KEY epoch the attached publisher authenticated with, never the session epoch (API.md 8.3); it pairs with min_key_epoch in the re-keying workflow. 0 when nothing is attached, and for a legacy bare key, which carries none."
+        },
+        "protocol": {
+          "type": "string",
+          "description": "Empty when nothing is attached.",
+          "enum": [
+            "srt",
+            "rtmp",
+            "rtmps",
+            ""
+          ]
+        },
+        "dual_accept": {
+          "type": "boolean",
+          "description": "true means the attached producer is still on a legacy bare key and needs re-keying."
+        }
+      },
+      "required": [
+        "stream",
+        "state",
+        "session",
+        "epoch",
+        "protocol",
+        "dual_accept"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

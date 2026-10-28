@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/StreamInputReturned",
+  "$defs": {
+    "StreamInputReturned": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "stream.input_returned"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "the SAME session id: a rejoin continues the session that was held"
+        },
+        "epoch": {
+          "type": "integer",
+          "description": "the SAME session epoch"
+        },
+        "gap_seconds": {
+          "type": "number",
+          "description": "wall-clock from input loss to return"
+        },
+        "spliced_at_media_sequence": {
+          "description": "null in this build: the discontinuity lands on the next announced segment",
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "from_layer": {
+          "type": "string",
+          "enum": [
+            "backup",
+            "filler",
+            "slate",
+            "card",
+            "none"
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "gap_seconds",
+        "spliced_at_media_sequence",
+        "from_layer",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

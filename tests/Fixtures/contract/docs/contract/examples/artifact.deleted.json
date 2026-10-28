@@ -1,0 +1,24 @@
+{
+  "event": "artifact.deleted",
+  "delivery": "01J8ZCKHT4N2QWX6VM3RKB9PD8",
+  "occurred_at": "2026-08-29T22:16:04.902Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "session_epoch": 3,
+  "job_id": null,
+  "generation": "01J8ZCK5R7V2QNX8RW4TKB6PD2",
+  "kind": "hls_sealed",
+  "inventory_sha256": "9f2c1d5e6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f",
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  },
+  "plan_revision": 2,
+  "request_id": "01J8ZCKBT4N2QWX6VM3RKB9PD8",
+  "deleted_at": "2026-08-29T22:16:04.89Z",
+  "purge": false,
+  "purge_reason": null
+}

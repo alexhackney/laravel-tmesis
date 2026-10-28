@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/HookResponse",
+  "$defs": {
+    "HookResponse": {
+      "type": "object",
+      "properties": {
+        "allow": {
+          "type": "boolean",
+          "description": "The decision. Omitted is a DENY: an empty body has not made a decision."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Optional human sentence, written to the node's rejection log line. It is not carried on stream.publish_rejected, whose reason is the closed value hook_denied."
+        },
+        "patch": {
+          "description": "Optional per-stream config patch: the PATCH /v1/streams/{id} body (StreamSpec), unknown fields refused. Applied on the allow decision, before the session starts; on a stream with no row it provisions one, so labels and relays here are in force from the first session and every later one. A patch that does not apply is logged and never fails the publish."
+        }
+      },
+      "required": [
+        "allow"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

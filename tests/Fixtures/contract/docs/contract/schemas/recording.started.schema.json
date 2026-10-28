@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/RecordingStarted",
+  "$defs": {
+    "RecordingStarted": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "recording.started"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "The session this recording belongs to. As built a recording is one file in one session; a hold closes the open part and a rejoin opens the next one under a new recording_id in the same session, and a node restart ends the session so the next publish opens a new one. Correlate on recording_id."
+        },
+        "epoch": {
+          "type": "integer"
+        },
+        "recording_id": {
+          "type": "string",
+          "description": "Ledger id, stable across every event for this recording (started, degraded, completed, registered, failed). A hold closes it (reason input_lost) and the rejoin opens a new one; a PATCH off then on and a node restart open a new one too."
+        },
+        "artifact": {
+          "type": "string",
+          "description": "CLOSED set. ingest is exactly what the publisher sent, pre-ladder and pre-splice; master is the as-aired program. Read this before doing anything with the event.",
+          "enum": [
+            "ingest",
+            "master"
+          ]
+        },
+        "part": {
+          "type": "integer",
+          "description": "0-based, per session and artifact. Above 0 means a PATCH turned recording off then on inside this session, or the publisher left and rejoined (the part before it closed at the hold with reason input_lost); each part is its own file under its own recording_id and nothing is stitched (final plan 11.34 D4, 11.38). A restart ends the session, so a part never continues across one."
+        },
+        "path": {
+          "type": "string",
+          "description": "Local path on the node. NOT a URL and not fetchable over the API."
+        },
+        "container": {
+          "type": "string",
+          "description": "CLOSED set. The capture container: MPEG-TS for SRT ingest, FLV for RTMP ingest. For the told master (artifact master, since v0.8.0) it is its SOURCES' capture container: the master's own file is an MP4 written whole by a remux, reported on recording.completed and recording.registered. A plain MP4 with a trailing moov is forbidden for live capture.",
+          "enum": [
+            "mpegts",
+            "flv",
+            "fmp4"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "description": "publisher for the ingest copy and for the told master, which joins ingest parts.",
+          "enum": [
+            "publisher",
+            "top_rung",
+            "mezzanine"
+          ]
+        },
+        "fencing_epoch": {
+          "type": "integer",
+          "description": "Always 0 for the ingest artifact, which takes no lease. Reserved for the master artifact (M4), where it is the output lease's fencing epoch when the file opened. Not the session epoch and not the key epoch."
+        },
+        "started_by": {
+          "type": "string",
+          "description": "publisher is the session's first part; api is a normal, expected value (starting a recording mid-show is a real producer request); resume is the part a rejoin opened after a hold, when the publisher returned inside fallback.end_seconds with recording on (final plan 11.38).",
+          "enum": [
+            "publisher",
+            "api",
+            "resume"
+          ]
+        },
+        "destination": {
+          "description": "The absolute directory the finalized artifact will be copied to. Told, never derived. null means it stays local, or that its stream resolves to a destination_ref and the recording will be held on the node (WEBHOOKS.md 8.14).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retention_hours": {
+          "type": "integer"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "source_generations": {
+          "type": "array",
+          "description": "The told master's source generations (recording_ingest) in join order, the order of their recordings' start; the master fires recording.started when its remux begins, once. Always [] for the ingest artifact.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "recording_id",
+        "artifact",
+        "part",
+        "path",
+        "container",
+        "source",
+        "fencing_epoch",
+        "started_by",
+        "destination",
+        "retention_hours",
+        "labels",
+        "source_generations"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

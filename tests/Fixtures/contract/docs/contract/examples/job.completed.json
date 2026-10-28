@@ -1,0 +1,44 @@
+{
+  "event": "job.completed",
+  "delivery": "01J8ZCS2N6K8QWX4VR7TMB5PD3",
+  "occurred_at": "2026-08-28T19:52:44.918Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "job": "job_01J8ZCA2R7F3H9NQ4KTX8VD5YB",
+  "state": "completed",
+  "duration_seconds": 1802.4,
+  "encode_seconds": 1284,
+  "attempts": 1,
+  "evictions": 0,
+  "source": {
+    "destination_ref": "tsp-media",
+    "key": "uploads/abc.mov",
+    "bytes": 8931245121
+  },
+  "outputs": [
+    {
+      "kind": "hls_ladder",
+      "generation": "01J8ZD02R7F3H9NQ4KTX8VD5Y1",
+      "state": "completed",
+      "url": "s3://tsp-media/videos/941/playlist.m3u8",
+      "bytes": 4192837465
+    },
+    {
+      "kind": "audio",
+      "generation": "01J8ZD02R7F3H9NQ4KTX8VD5Y3",
+      "state": "completed",
+      "url": "s3://tsp-media/videos/941/audio.m4a",
+      "bytes": 148372615,
+      "format": "aac"
+    }
+  ],
+  "probe": {
+    "video": "h264 3840x2160 yuv420p 29.97fps",
+    "audio": "aac 48000 stereo",
+    "duration_seconds": 1802.4
+  },
+  "labels": {
+    "video_id": "941"
+  }
+}

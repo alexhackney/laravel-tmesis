@@ -1,0 +1,166 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/ArtifactFinalized",
+  "$defs": {
+    "ArtifactFinalized": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "artifact.finalized"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "description": "The stream the generation came from; null for a job generation, which names job_id instead.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session": {
+          "description": "The publish session the generation came from; null for a job generation.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "session_epoch": {
+          "description": "The session's epoch, the publish identity. Not the fencing epoch. Null for a job generation.",
+          "oneOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "job_id": {
+          "description": "The transcode job a JOB generation belongs to (P10); null for a stream's. Its events route to the job's callback_url.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "generation": {
+          "type": "string",
+          "description": "The immutable output generation (a ULID). Every artifact route and event keys on this."
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "hls_sealed",
+            "recording_ingest",
+            "recording_master",
+            "job_hls",
+            "job_mp4",
+            "job_audio",
+            "job_thumbnails",
+            "job_probe",
+            "job_transcript"
+          ]
+        },
+        "inventory_sha256": {
+          "type": "string",
+          "description": "SHA-256 of the generation's committed inventory, 64 lowercase hex digits."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "recording_id": {
+          "description": "The recording a recording generation belongs to; null for hls_sealed.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "object_count": {
+          "type": "integer"
+        },
+        "size_bytes": {
+          "type": "integer"
+        },
+        "finalized_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, docs/API.md section 4"
+        },
+        "registered_at": {
+          "description": "Null at finalisation unless the recording had already registered.",
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "RFC3339 UTC, docs/API.md section 4"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "session_epoch",
+        "job_id",
+        "generation",
+        "kind",
+        "inventory_sha256",
+        "labels",
+        "recording_id",
+        "object_count",
+        "size_bytes",
+        "finalized_at",
+        "registered_at"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

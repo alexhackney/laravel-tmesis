@@ -1,0 +1,476 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Repin this package to a tmesis checkout: the mechanical half of docs/contract-suite.md's
+ * "Bumping the pin".
+ *
+ * What it does, in order:
+ *
+ *   1. copies the contract artifacts from the checkout into tests/Fixtures/contract/,
+ *      mirroring the tmesis paths (docs/contract/openapi.json, every
+ *      docs/contract/schemas/*.schema.json, every generated body under
+ *      docs/contract/examples/*.json, the four test/vectors/*.json, and since v0.6.0
+ *      the role templates docs/contract/templates/*.yml with their MD5SUMS: YAML and
+ *      a checksum file, not only JSON);
+ *   2. rewrites the sha256 table in PROVENANCE.md over the whole set, the two
+ *      not-copied golden inputs included, and the Tag, Commit and Copied-on rows from
+ *      the checkout's git state, and TMESIS_TAG in .github/workflows/tests.yml to the
+ *      same tag (the full commit for an untagged pin);
+ *   3. reports every artifact that moved, arrived, or would have vanished (a vanished
+ *      schema is a contract break inside v1 and stops the run);
+ *   4. runs the contract suite against the checkout AND against the bundled copies,
+ *      one pest invocation per group, exactly as tmesis CI runs it.
+ *
+ * What it cannot do is the package's half of a shape change: a new DTO, an event
+ * class, a fixture that needs a new required field, a count in InventoryTest. A red
+ * group after this script is that work, and docs/contract-suite.md's steps 3 to 6 apply. A green
+ * run means the repin is a commit away: commit here, and the release is the PR that
+ * renames the CHANGELOG heading to the tmesis version whose contract this is (docs/development.md,
+ * Releasing).
+ *
+ * Usage:
+ *
+ *   bin/repin --tmesis /path/to/tmesis [--tag v0.1.0-rc5] [--allow-dirty] [--no-test]
+ *
+ * --tmesis       the checkout root; TMESIS_CONTRACT_DIR is read when absent
+ * --tag          the tmesis tag to record; defaults to the checkout's exact tag, or
+ *                "untagged" with the short sha when HEAD carries none
+ * --allow-dirty  copy from a checkout whose artifact paths have uncommitted changes.
+ *                Refused by default because the Commit row would then name a commit
+ *                the bytes did not come from; the row records the dirt when allowed
+ * --no-test      copy and rewrite only
+ *
+ * Exit 0 when everything is green, 1 on a precondition, 2 when the suite is red.
+ */
+
+declare(strict_types=1);
+
+const ARTIFACT_SINGLES = [
+    'docs/contract/openapi.json',
+    'docs/contract/templates/MD5SUMS',
+    'test/vectors/fleet.json',
+    'test/vectors/hook.json',
+    'test/vectors/keys.json',
+    'test/vectors/keyterms.json',
+    'test/vectors/webhooks.json',
+];
+
+/**
+ * The directories copied whole, as globs relative to the checkout. The examples are the
+ * node's generated bodies (one per registered event, plus publish.verify and, since
+ * v0.6.0, publish.verify.response), copied since v0.3.1 and read by the tests in
+ * place of hand-derived payloads. The templates are the four config.<role>.yml the
+ * enrolment renderer fills (v0.6.0, handover 3.3); their MD5SUMS is a single above.
+ */
+const ARTIFACT_GLOBS = [
+    'docs/contract/examples/*.json',
+    'docs/contract/schemas/*.schema.json',
+    'docs/contract/templates/*.yml',
+];
+
+/**
+ * Hashed into the table so it covers the whole tmesis vector set, never copied: they
+ * are packager golden inputs, not contract artifacts. PROVENANCE.md lists them under
+ * "Not copied" and ProvenanceTest skips them by that list.
+ */
+const NOT_COPIED = [
+    'test/vectors/init-720p.mp4',
+    'test/vectors/init-audio.mp4',
+];
+
+const GROUPS = [
+    'provenance',
+    'vectors-keys',
+    'vectors-webhooks',
+    'vectors-hook',
+    'vectors-keyterms',
+    'schemas-events',
+    'schemas-fleet',
+    'fleet-receiver',
+    'hook-endpoint',
+    'schemas-responses',
+    'schemas-requests',
+    'routes',
+];
+
+/**
+ * @param  list<string>  $argv
+ * @return array{tmesis: string, tag: ?string, allowDirty: bool, test: bool}
+ */
+function parseArgs(array $argv): array
+{
+    $out = ['tmesis' => '', 'tag' => null, 'allowDirty' => false, 'test' => true];
+
+    for ($i = 1, $n = count($argv); $i < $n; $i++) {
+        $arg = $argv[$i];
+
+        switch ($arg) {
+            case '--tmesis':
+                $out['tmesis'] = (string) ($argv[++$i] ?? '');
+                break;
+            case '--tag':
+                $out['tag'] = (string) ($argv[++$i] ?? '');
+                break;
+            case '--allow-dirty':
+                $out['allowDirty'] = true;
+                break;
+            case '--no-test':
+                $out['test'] = false;
+                break;
+            case '-h':
+            case '--help':
+                fwrite(STDOUT, "usage: bin/repin --tmesis <checkout> [--tag <tag>] [--allow-dirty] [--no-test]\n");
+                exit(0);
+            default:
+                fail("unknown argument [{$arg}]; see --help");
+        }
+    }
+
+    if ($out['tmesis'] === '') {
+        $env = getenv('TMESIS_CONTRACT_DIR');
+        $out['tmesis'] = is_string($env) ? trim($env) : '';
+    }
+
+    if ($out['tmesis'] === '') {
+        fail('no tmesis checkout: pass --tmesis <path> or set TMESIS_CONTRACT_DIR');
+    }
+
+    $real = realpath($out['tmesis']);
+
+    if ($real === false || ! is_file($real.'/docs/contract/openapi.json')) {
+        fail("[{$out['tmesis']}] is not a tmesis checkout (no docs/contract/openapi.json under it)");
+    }
+
+    $out['tmesis'] = $real;
+
+    return $out;
+}
+
+function fail(string $message, int $code = 1): never
+{
+    fwrite(STDERR, "repin: {$message}\n");
+    exit($code);
+}
+
+function say(string $line = ''): void
+{
+    fwrite(STDOUT, $line."\n");
+}
+
+/**
+ * Run git in the checkout and return trimmed stdout, or null when git is absent, the
+ * directory is not a repository, or the command failed.
+ *
+ * @param  list<string>  $args
+ */
+function git(string $root, array $args): ?string
+{
+    $command = 'git -C '.escapeshellarg($root).' '.implode(' ', array_map('escapeshellarg', $args)).' 2>/dev/null';
+    $output = [];
+    $status = 1;
+    exec($command, $output, $status);
+
+    return $status === 0 ? trim(implode("\n", $output)) : null;
+}
+
+/**
+ * The artifact paths, relative to the checkout, in the order the table lists them
+ * (sorted, which is how the tmesis side and ProvenanceTest read it).
+ *
+ * @return list<string>
+ */
+function artifactPaths(string $root): array
+{
+    $paths = ARTIFACT_SINGLES;
+
+    foreach (ARTIFACT_GLOBS as $glob) {
+        foreach (glob($root.'/'.$glob) ?: [] as $file) {
+            $paths[] = dirname($glob).'/'.basename($file);
+        }
+    }
+
+    foreach (NOT_COPIED as $path) {
+        $paths[] = $path;
+    }
+
+    sort($paths);
+
+    return $paths;
+}
+
+/**
+ * The sha256 rows currently in PROVENANCE.md, path to hash.
+ *
+ * @return array<string, string>
+ */
+function currentRows(string $markdown): array
+{
+    preg_match('/^```$(.*?)^```$/ms', $markdown, $matches);
+
+    $rows = [];
+
+    foreach (explode("\n", $matches[1] ?? '') as $line) {
+        if (preg_match('/^([0-9a-f]{64})  (.+)$/', trim($line), $row) === 1) {
+            $rows[$row[2]] = $row[1];
+        }
+    }
+
+    return $rows;
+}
+
+/**
+ * Replace one `| Label | value |` row of the header table.
+ */
+function setHeaderRow(string $markdown, string $label, string $value): string
+{
+    $pattern = '/^\| '.preg_quote($label, '/').' \| .* \|$/m';
+
+    if (preg_match($pattern, $markdown) !== 1) {
+        fail("PROVENANCE.md has no [{$label}] row to update");
+    }
+
+    return (string) preg_replace($pattern, '| '.$label.' | '.$value.' |', $markdown, 1);
+}
+
+/**
+ * The pin string the tree's markers carry BEFORE this run rewrites the Tag row: the
+ * tag as written, or the short sha out of an `untagged, <sha> on <branch>` value. It
+ * is what the green hint tells the next reader to grep for, so a repin from a branch
+ * commit to the tag it became does not leave the markers behind.
+ */
+function previousPin(string $markdown): string
+{
+    if (preg_match('/^\| Tag \| `?([^`|]+?)`? \|$/m', $markdown, $row) !== 1) {
+        return 'v0.1.0-rc';
+    }
+
+    $value = trim($row[1]);
+
+    if (preg_match('/^untagged, ([0-9a-f]{7,40}) on /', $value, $sha) === 1) {
+        return $sha[1];
+    }
+
+    return $value;
+}
+
+/**
+ * One pest invocation per group with an explicit accumulator, copied from the tmesis
+ * job rather than tidied: a misspelled group in a combined run is silently absorbed,
+ * on its own it is an empty suite, and --fail-on-empty-test-suite makes that a failure.
+ *
+ * @return list<string> the groups that failed
+ */
+function runSuite(string $package, ?string $contractDir): array
+{
+    $failed = [];
+
+    foreach (GROUPS as $group) {
+        $env = $contractDir === null ? 'env -u TMESIS_CONTRACT_DIR ' : 'TMESIS_CONTRACT_DIR='.escapeshellarg($contractDir).' ';
+        $command = 'cd '.escapeshellarg($package).' && '.$env
+            .'vendor/bin/pest --ci --fail-on-empty-test-suite --group='.escapeshellarg($group).' 2>&1';
+
+        $output = [];
+        $status = 1;
+        exec($command, $output, $status);
+
+        $summary = '';
+
+        foreach (array_reverse($output) as $line) {
+            if (str_contains($line, 'Tests:')) {
+                $summary = trim((string) preg_replace('/\e\[[0-9;]*m/', '', $line));
+                break;
+            }
+        }
+
+        say(sprintf('   %-18s %s  %s', $group, $status === 0 ? 'green' : 'RED  ', $summary));
+
+        if ($status !== 0) {
+            $failed[] = $group;
+        }
+    }
+
+    return $failed;
+}
+
+$args = parseArgs($argv);
+$package = dirname(__DIR__);
+$fixtures = $package.'/tests/Fixtures/contract';
+$provenance = $fixtures.'/PROVENANCE.md';
+$tmesis = $args['tmesis'];
+
+if (! is_file($provenance)) {
+    fail("no PROVENANCE.md at [{$provenance}]");
+}
+
+// --- the checkout's git state ------------------------------------------------------
+
+$commit = git($tmesis, ['rev-parse', 'HEAD']);
+$exactTag = git($tmesis, ['describe', '--tags', '--exact-match', 'HEAD']);
+$branch = git($tmesis, ['rev-parse', '--abbrev-ref', 'HEAD']);
+$dirtyArtifacts = git($tmesis, ['status', '--porcelain', '--', 'docs/contract', 'test/vectors']);
+
+if ($commit === null) {
+    fail("[{$tmesis}] is not a git checkout, so the Commit row cannot be filled; the table needs a commit to name");
+}
+
+if ($dirtyArtifacts !== null && $dirtyArtifacts !== '' && ! $args['allowDirty']) {
+    fail("the checkout's artifact paths have uncommitted changes, so the Commit row would name a commit the bytes "
+        ."did not come from. Commit on the tmesis side first, or pass --allow-dirty to record the dirt:\n".$dirtyArtifacts);
+}
+
+$tag = $args['tag'] ?? $exactTag ?? 'untagged, '.substr($commit, 0, 7).' on '.($branch ?? 'a detached head');
+
+say('== repin');
+say("   checkout   {$tmesis}");
+say("   commit     {$commit}".($dirtyArtifacts !== null && $dirtyArtifacts !== '' ? ' (artifact paths DIRTY, recorded)' : ''));
+say("   tag        {$tag}");
+
+// --- copy, hash, report -------------------------------------------------------------
+
+$markdown = (string) file_get_contents($provenance);
+$before = currentRows($markdown);
+$previousPin = previousPin($markdown);
+$paths = artifactPaths($tmesis);
+
+$moved = [];
+$arrived = [];
+$table = [];
+
+foreach ($paths as $relative) {
+    $source = $tmesis.'/'.$relative;
+
+    if (! is_file($source)) {
+        fail("the checkout has no [{$relative}]");
+    }
+
+    $sha = hash_file('sha256', $source);
+    $table[] = $sha.'  '.$relative;
+
+    if (! in_array($relative, NOT_COPIED, true)) {
+        $target = $fixtures.'/'.$relative;
+
+        if (! is_dir(dirname($target)) && ! mkdir(dirname($target), 0o755, true)) {
+            fail('cannot create ['.dirname($target).']');
+        }
+
+        if (! copy($source, $target)) {
+            fail("cannot copy [{$relative}]");
+        }
+    }
+
+    if (! array_key_exists($relative, $before)) {
+        $arrived[] = $relative;
+    } elseif ($before[$relative] !== $sha) {
+        $moved[] = $relative;
+    }
+}
+
+// A schema in the table that the checkout no longer has is a removal, and inside v1
+// a removed event or shape is a finding about the node, not something to absorb.
+$vanished = array_values(array_diff(array_keys($before), $paths));
+
+if ($vanished !== []) {
+    fail('these artifacts are in PROVENANCE.md but not in the checkout, which is a contract break inside v1: '
+        .implode(', ', $vanished));
+}
+
+foreach (ARTIFACT_GLOBS as $glob) {
+    foreach (glob($fixtures.'/'.$glob) ?: [] as $bundled) {
+        $relative = dirname($glob).'/'.basename($bundled);
+
+        if (! in_array($relative, $paths, true)) {
+            fail("the bundled copy [{$relative}] has no counterpart in the checkout; remove it by hand if that is really intended");
+        }
+    }
+}
+
+say();
+say('== artifacts');
+say('   '.count($paths).' rows in the table ('.count(NOT_COPIED).' not copied)');
+
+foreach ($moved as $relative) {
+    say("   moved      {$relative}");
+}
+
+foreach ($arrived as $relative) {
+    say("   new        {$relative}");
+}
+
+if ($moved === [] && $arrived === []) {
+    say('   nothing moved: the repin is a tag-string edit (docs/contract-suite.md, Bumping the pin, step 1)');
+}
+
+// --- rewrite PROVENANCE.md ------------------------------------------------------------
+
+$markdown = (string) preg_replace(
+    '/^```$(.*?)^```$/ms',
+    "```\n".implode("\n", $table)."\n```",
+    $markdown,
+    1,
+);
+
+$commitNote = $dirtyArtifacts !== null && $dirtyArtifacts !== ''
+    ? '`'.$commit.'` (the artifact paths were dirty in the checkout when copied; re-run after the tmesis commit)'
+    : '`'.$commit.'`';
+
+$markdown = setHeaderRow($markdown, 'Tag', '`'.$tag.'`');
+$markdown = setHeaderRow($markdown, 'Commit', $commitNote);
+$markdown = setHeaderRow($markdown, 'Copied on', date('Y-m-d'));
+
+file_put_contents($provenance, $markdown);
+
+say();
+say('== PROVENANCE.md');
+say('   table rewritten, Tag, Commit and Copied-on rows set');
+
+// The CI checkout leg reads tmesis at TMESIS_TAG; it is the Tag row's fact, so it is
+// written here, never by hand (the v0.8.0 repin left it a release behind). An untagged
+// pin is checked out by its full commit.
+$workflow = $package.'/.github/workflows/tests.yml';
+$ref = str_starts_with($tag, 'untagged') ? $commit : $tag;
+$yaml = (string) file_get_contents($workflow);
+
+if (preg_match('/^  TMESIS_TAG: \S+$/m', $yaml) !== 1) {
+    fail('.github/workflows/tests.yml has no TMESIS_TAG line to update');
+}
+
+file_put_contents($workflow, (string) preg_replace('/^  TMESIS_TAG: \S+$/m', '  TMESIS_TAG: '.$ref, $yaml, 1));
+say("   .github/workflows/tests.yml TMESIS_TAG set to {$ref}");
+
+if (! $args['test']) {
+    say();
+    say('== --no-test: stopping before the suite');
+    exit(0);
+}
+
+// --- the suite, both roots ------------------------------------------------------------
+
+if (! is_file($package.'/vendor/bin/pest')) {
+    fail('vendor/bin/pest is missing: composer install first');
+}
+
+say();
+say("== contract suite against the checkout (TMESIS_CONTRACT_DIR={$tmesis})");
+$redExternal = runSuite($package, $tmesis);
+
+say();
+say('== contract suite against the bundled copies');
+$redBundled = runSuite($package, null);
+
+say();
+
+$red = array_values(array_unique(array_merge($redExternal, $redBundled)));
+
+if ($red !== []) {
+    say('== RED: '.implode(', ', $red));
+    say('   The artifacts are copied and the table is right; what is left is this package catching up with a');
+    say('   shape change (docs/contract-suite.md, Bumping the pin, steps 3 to 6): a DTO, an event class, a fixture missing a');
+    say('   new required field, a count in tests/Contract/InventoryTest.php or ProvenanceTest.php.');
+    exit(2);
+}
+
+say('== GREEN on both roots');
+say('   Remaining tag strings, if the tag moved: grep -rn '.escapeshellarg($previousPin).' src tests .github README.md docs');
+say('   Then commit here; the release is the CHANGELOG rename PR to the tmesis version whose contract this is (docs/development.md, Releasing).');
+exit(0);

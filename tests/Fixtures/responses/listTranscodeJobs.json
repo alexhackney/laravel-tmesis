@@ -1,0 +1,38 @@
+{
+  "items": [
+    {
+      "id": "job_01J8Z3N6Q4W5E6R7T8Y9V0H1XP",
+      "state": "running",
+      "priority": "normal",
+      "stage": "encode",
+      "percent": 41.5,
+      "attempts": 0,
+      "evictions": 1,
+      "submitted_at": "2026-09-27T20:00:00Z",
+      "started_at": "2026-09-27T20:00:03Z",
+      "completed_at": null,
+      "error_code": null,
+      "labels": {
+        "video_id": "941"
+      }
+    },
+    {
+      "id": "job_01J8Z3M1B2C3D4E5F6G7H8J9KA",
+      "state": "failed",
+      "priority": "high",
+      "stage": null,
+      "percent": 0,
+      "attempts": 3,
+      "evictions": 0,
+      "submitted_at": "2026-09-27T19:40:00Z",
+      "started_at": "2026-09-27T19:40:02Z",
+      "completed_at": "2026-09-27T19:52:10Z",
+      "error_code": "source_unreadable",
+      "labels": {
+        "video_id": "940"
+      }
+    }
+  ],
+  "limit": 100,
+  "next_cursor": null
+}

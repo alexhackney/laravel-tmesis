@@ -1,0 +1,62 @@
+{
+  "items": [
+    {
+      "id": "01J8ZCK5R7V2QNX8RW4TKB6PD2",
+      "stream": null,
+      "session": null,
+      "session_epoch": null,
+      "job_id": "job_01J8ZCA2R7F3H9NQ4KTX8VD5YB",
+      "kind": "job_hls",
+      "recording_id": null,
+      "state": "finalized",
+      "inventory_sha256": "9f2c1d5e6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f",
+      "object_count": 1,
+      "size_bytes": 19204817408,
+      "finalized_at": "2026-09-22T21:45:58.117Z",
+      "registered_at": null,
+      "retention_hours": 72,
+      "retention_expires_at": "2026-09-25T21:47:02.334Z",
+      "plan_revision": 1,
+      "release_state": "unreleased",
+      "held": true,
+      "hold_reasons": [
+        "retention_not_elapsed",
+        "release_required"
+      ],
+      "local_present": true,
+      "created_at": "2026-09-22T19:12:08.000Z",
+      "master": null,
+      "purge_requested_at": null
+    },
+    {
+      "id": "01J8ZCM2A4N6QWX8VR3TKB5PD1",
+      "stream": null,
+      "session": null,
+      "session_epoch": null,
+      "job_id": "job_01J8ZCA2R7F3H9NQ4KTX8VD5YB",
+      "kind": "job_audio",
+      "recording_id": null,
+      "state": "held",
+      "inventory_sha256": null,
+      "object_count": 0,
+      "size_bytes": 0,
+      "finalized_at": null,
+      "registered_at": null,
+      "retention_hours": 72,
+      "retention_expires_at": null,
+      "plan_revision": null,
+      "release_state": "unreleased",
+      "held": true,
+      "hold_reasons": [
+        "not_finalized",
+        "writer_active"
+      ],
+      "local_present": true,
+      "created_at": "2026-09-22T22:05:11.000Z",
+      "master": null,
+      "purge_requested_at": null
+    }
+  ],
+  "limit": 100,
+  "next_cursor": "eyJyIjoiYXJ0aWZhY3RzIiwicyI6InNob3ctMjA0MS1tYWluIn0"
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/EnrollRequest",
+  "$defs": {
+    "EnrollRequest": {
+      "type": "object",
+      "properties": {
+        "node": {
+          "type": "string",
+          "description": "The node name from config. The control plane may return a different durable name; the node adopts what it is told."
+        },
+        "role": {
+          "type": "string",
+          "description": "CLOSED set. It decides which desired-state fields the control plane may send.",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "description": "The tmesis version string, so a control plane can refuse to enroll a build it cannot drive."
+        },
+        "listen": {
+          "$ref": "#/$defs/ListenAddresses"
+        },
+        "capabilities": {
+          "type": "object",
+          "description": "Feature name to whether this build has it. A key the control plane does not know is ignored, never an error.",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        }
+      },
+      "required": [
+        "node",
+        "role",
+        "version",
+        "listen",
+        "capabilities"
+      ],
+      "additionalProperties": false
+    },
+    "ListenAddresses": {
+      "type": "object",
+      "properties": {
+        "rtmp": {
+          "type": "string",
+          "description": "host:port, empty when the listener is off"
+        },
+        "srt": {
+          "type": "string",
+          "description": "host:port, empty when the listener is off"
+        }
+      },
+      "required": [
+        "rtmp",
+        "srt"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

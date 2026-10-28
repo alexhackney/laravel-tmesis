@@ -1,0 +1,23 @@
+{
+  "event": "job.failed",
+  "delivery": "01J8ZCT4Q8M2NWX7VR5KMB3PD6",
+  "occurred_at": "2026-08-28T19:33:07.502Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "job": "job_01J8ZCA2R7F3H9NQ4KTX8VD5YB",
+  "state": "failed",
+  "attempts": 1,
+  "evictions": 0,
+  "stage": "fetch",
+  "error": {
+    "code": "source_unreadable",
+    "class": "permanent",
+    "message": "tsp-media uploads/abc.mov: 404 from the source bucket",
+    "retryable": false
+  },
+  "landed": [],
+  "labels": {
+    "video_id": "941"
+  }
+}

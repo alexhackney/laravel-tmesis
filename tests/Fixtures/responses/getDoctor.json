@@ -1,0 +1,227 @@
+{
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "version": "1.4.0",
+  "contract_version": 1,
+  "status": "ok",
+  "generated_at": "2026-08-28T19:26:03.118Z",
+  "cached": false,
+  "age_seconds": 0.4,
+  "checks_ran": true,
+  "config": {
+    "source": "/etc/tmesis/config.yml",
+    "node": {
+      "name": "origin-atl-01",
+      "role": "origin",
+      "data_dir": "/var/lib/tmesis",
+      "log_level": "info"
+    },
+    "ingest": {
+      "rtmp": {
+        "listen": ":1935"
+      },
+      "srt": {
+        "listen": ":8890"
+      },
+      "keys": {
+        "verify_secrets": [
+          {
+            "kid": "2026-08",
+            "secret": "***"
+          }
+        ],
+        "dual_accept": {
+          "enabled": false,
+          "count": 0
+        }
+      },
+      "quarantine": {
+        "max_gb": 20,
+        "max_age_hours": 48
+      }
+    },
+    "encode": {
+      "ffmpeg": "/opt/tmesis/current/ffmpeg",
+      "default_ladder": "broadcast-720p",
+      "ladders": {
+        "broadcast-720p": {
+          "segment_seconds": 6,
+          "rungs": [
+            {
+              "name": "720p",
+              "width": 1280,
+              "height": 720,
+              "fps": "60000/1001",
+              "v_kbps": 3500,
+              "preset": "veryfast",
+              "audio_only": false
+            },
+            {
+              "name": "480p",
+              "width": 854,
+              "height": 480,
+              "fps": "30000/1001",
+              "v_kbps": 1400,
+              "preset": "veryfast",
+              "audio_only": false
+            },
+            {
+              "name": "audio",
+              "audio_only": true
+            }
+          ],
+          "audio": {
+            "codec": "aac",
+            "rate": 48000,
+            "a_kbps": 128,
+            "normalize": true
+          }
+        }
+      }
+    },
+    "delivery": {
+      "mode": "bucket",
+      "bucket": {
+        "endpoint": "https://s3.us-west-004.backblazeb2.com",
+        "bucket": "tsp-live",
+        "region": "us-west-004",
+        "access_key": "***",
+        "secret_key": "***",
+        "prefix": "live",
+        "upload_concurrency": 8
+      },
+      "origin": {
+        "domain": "",
+        "listen_http": ":8080"
+      }
+    },
+    "dvr": {
+      "capture": true,
+      "retention_hours": 72
+    },
+    "relays": [],
+    "transcription": {
+      "provider": "none",
+      "api_key": null
+    },
+    "webhooks": {
+      "url": "https://app.example.com/api/webhooks/tmesis",
+      "secret": "***"
+    },
+    "api": {
+      "listen": "127.0.0.1:7000",
+      "admin_token": "***"
+    },
+    "control_plane": {
+      "url": "https://app.example.com/api/fleet",
+      "token": "***",
+      "heartbeat_seconds": 10
+    },
+    "limits": {
+      "disk_floor_gb": 10,
+      "max_streams": 0
+    }
+  },
+  "hardware": {
+    "cpu": {
+      "model": "AMD Ryzen 9 7950X",
+      "physical_cores": 16,
+      "logical_cores": 32,
+      "arch": "amd64",
+      "allowance": 32,
+      "restricted": false
+    },
+    "memory_bytes": 68719476736,
+    "gpus": [
+      {
+        "index": 0,
+        "vendor": "nvidia",
+        "model": "RTX 4000 Ada",
+        "render_node": "/dev/dri/renderD128"
+      }
+    ]
+  },
+  "backend": {
+    "active": "h264_nvenc",
+    "preset": "p2",
+    "accelerator": "nvenc",
+    "zero_copy": true,
+    "fallback_reason": null,
+    "requested": "auto",
+    "usable": true
+  },
+  "jobs_backend": {
+    "active": "libx264",
+    "preset": "veryfast",
+    "accelerator": "none",
+    "zero_copy": null,
+    "fallback_reason": null,
+    "requested": "libx264",
+    "usable": true
+  },
+  "benchmark": {
+    "profile": "nvenc-ada-2026-08",
+    "ran_at": "2026-08-27T04:19:11.402Z",
+    "stale": false
+  },
+  "capacity": {
+    "measured": true,
+    "encode_slots_total": 6,
+    "encode_slots_used": 4,
+    "max_streams": 6,
+    "disk_free_bytes": 412316860416,
+    "disk_floor_bytes": 10737418240
+  },
+  "checks": [
+    {
+      "name": "config",
+      "status": "pass",
+      "detail": "valid"
+    },
+    {
+      "name": "ffmpeg",
+      "status": "pass",
+      "detail": "/opt/tmesis/current/ffmpeg"
+    },
+    {
+      "name": "ffmpeg version",
+      "status": "pass",
+      "detail": "6.1.1, the pinned version"
+    },
+    {
+      "name": "engine checksums",
+      "status": "pass",
+      "detail": "2 of 2 match CHECKSUMS"
+    },
+    {
+      "name": "port ingest.rtmp",
+      "status": "pass",
+      "detail": "tcp :1935 bindable"
+    },
+    {
+      "name": "port ingest.srt",
+      "status": "pass",
+      "detail": "udp :8890 bindable"
+    },
+    {
+      "name": "delivery bucket",
+      "status": "pass",
+      "detail": "s3.us-west-004.backblazeb2.com:443 reachable"
+    },
+    {
+      "name": "webhooks",
+      "status": "pass",
+      "detail": "app.example.com:443 reachable"
+    },
+    {
+      "name": "disk free",
+      "status": "pass",
+      "detail": "384 GiB free, floor 10 GiB"
+    },
+    {
+      "name": "hardware encode",
+      "status": "warn",
+      "detail": "no acceleration device; encoding on the CPU"
+    }
+  ]
+}

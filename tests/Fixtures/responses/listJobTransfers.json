@@ -1,0 +1,66 @@
+{
+  "items": [
+    {
+      "id": "01J8ZCKAT4N2QWX6VM3RKB9PD9",
+      "generation": "01J8ZCK5R7V2QNX8RW4TKB6PD2",
+      "plan_revision": 1,
+      "target_id": "01J8ZCK7T4N2QWX6VM3RKB9PD8",
+      "artifact_path": "audio.m4a",
+      "object_key": "videos/941/audio.m4a",
+      "size_bytes": 19204817408,
+      "checksum_sha256": "3b7e4a1f0c9d8e2b5a6f7c8d9e0a1b2c3d4e5f60718293a4b5c6d7e8f9a0b1c2",
+      "state": "complete",
+      "phase": "complete",
+      "multipart_upload_id": "csn-vod-upload-7f3a",
+      "part_size_bytes": 16777216,
+      "part_count": 1145,
+      "completed_part_count": 1145,
+      "completion_body_sha256": "c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00c0ffee00",
+      "authorization_revision": 0,
+      "authorization_available": false,
+      "authorization_required": [],
+      "reconcile_required": false,
+      "etag": "\"5d41402abc4b2a76b9719d911017c592-1145\"",
+      "provider_checksum": "q2Z3Fh9kQ1u8m0Yl7pVJmA==-1145",
+      "provider_checksum_type": "COMPOSITE",
+      "provider_version_id": "3HL4kqtJlcpXroDTDmJ.rmSpXd3dIbrHY",
+      "completed_at": "2026-09-22T22:41:17.902Z",
+      "error": null
+    },
+    {
+      "id": "01J8ZCK9T4N2QWX6VM3RKB9PD8",
+      "generation": "01J8ZCK5R7V2QNX8RW4TKB6PD2",
+      "plan_revision": 1,
+      "target_id": "01J8ZCK8T4N2QWX6VM3RKB9PD8",
+      "artifact_path": "audio.m4a",
+      "object_key": "backup/videos/941/audio.m4a",
+      "size_bytes": 19204817408,
+      "checksum_sha256": "3b7e4a1f0c9d8e2b5a6f7c8d9e0a1b2c3d4e5f60718293a4b5c6d7e8f9a0b1c2",
+      "state": "waiting_authorization",
+      "phase": "parts",
+      "multipart_upload_id": "provider-upload-id",
+      "part_size_bytes": 16777216,
+      "part_count": 1145,
+      "completed_part_count": 100,
+      "completion_body_sha256": null,
+      "authorization_revision": 2,
+      "authorization_available": false,
+      "authorization_required": [
+        "parts",
+        "abort"
+      ],
+      "reconcile_required": false,
+      "etag": null,
+      "provider_checksum": null,
+      "provider_checksum_type": null,
+      "provider_version_id": null,
+      "completed_at": null,
+      "error": {
+        "code": "authorization_missing",
+        "message": "Supply signed requests for the current multipart upload"
+      }
+    }
+  ],
+  "limit": 100,
+  "next_cursor": null
+}

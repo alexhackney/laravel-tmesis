@@ -1,0 +1,182 @@
+# /etc/tmesis/config.yml on an origin: the box that takes a feed (from a venue edge or
+# straight from an encoder), runs the ladder, and serves HLS itself.
+#
+# `install.sh --role origin` seeds this file on a fresh box, and it is the MINIMAL file
+# for the role: every key not written here takes its default. Read
+# /opt/tmesis/current/config.example.yml for every key, and docs/CONFIG.md for what each
+# one costs to change.
+#
+# THIS FILE IS ALSO A CONTRACT ARTIFACT (docs/contract/templates/, docs/DEPLOY.md 5.6,
+# the non-interactive bootstrap). Every setting in it is a PLAIN VALUE (v0.8.0, decision
+# D9): a control plane renders it by writing values at their keys, and a hand install
+# edits the same lines. The braced names below are the box's SECRETS and nothing else:
+# TMESIS_STREAM_KEY_SECRET, TMESIS_ADMIN_TOKEN, TMESIS_WEBHOOK_SECRET,
+# TMESIS_HOOK_SECRET, TMESIS_TRANSCRIPTION_API_KEY, TMESIS_TRANSCRIPTION_BATCH_API_KEY,
+# TMESIS_TRANSCRIPTION_FALLBACK_API_KEY, TMESIS_KEYTERMS_HOOK_SECRET,
+# TMESIS_LIVE_ACCESS_KEY and TMESIS_LIVE_SECRET_KEY. systemd reads them from /etc/tmesis/.env (0600, root), the
+# node interpolates them at load, and a render leaves them as they are. The installer
+# writes the first three on a fresh box.
+
+node:
+  # name defaults to the hostname when empty. A rendered file carries the name the
+  # control plane stores for this box.
+  name: ""
+  role: origin
+
+ingest:
+  # app is the RTMP path segment a publisher, or an edge's relay, addresses:
+  # rtmp://<box>:1935/src.
+  rtmp: { listen: ":1935", app: src }
+  # latency_ms is the SRT receive latency FLOOR; a VPN or WAN path wants 500 to 1000
+  # (docs/CONFIG.md 6.2).
+  srt:  { listen: ":6001", latency_ms: 120 }
+  keys:
+    # OPEN KEY POSTURE, as the installer seeds every fresh box (final plan 11.27): this
+    # node accepts ANY stream token, minted or not, until the control plane's verify
+    # hook (ingest.verify_hook) is in place. An edge presents the publisher's original
+    # token, so this line is the origin's own authorization decision. Set it to false
+    # to require a key minted from the secret below.
+    open: true
+    verify_secrets:
+      - kid: "install"
+        secret: ${TMESIS_STREAM_KEY_SECRET}
+  # The synchronous publish hook (docs/CONFIG.md 6.2): OFF while the url is empty, the
+  # shipped value, and a rendered file's value until the control plane's hook endpoint
+  # answers (decision #141 A). It turns on by writing the url; the secret comes from
+  # .env, and a secret with no url is still OFF. timeout_ms and on_timeout are left at
+  # their defaults, 500 ms and allow.
+  verify_hook: { url: "", secret: "${TMESIS_HOOK_SECRET:-}" }
+
+encode:
+  # The pinned engine the installer puts in every release. install.sh writes the
+  # engine it resolved on this box here.
+  ffmpeg: /opt/tmesis/current/ffmpeg
+  default_ladder: production
+  ladders:
+    # The shipped broadcast ladder, a verbatim copy of the `production` stanza in
+    # config.example.yml. TestRoleTemplatesCarryTheShippedProductionLadder holds the
+    # two equal, so a change to the shipped ladder moves this copy in the same edit.
+    production:
+      segment_seconds: 6
+      rungs:
+        - { name: 1080p, width: 1920, height: 1080, fps: "60000/1001", v_kbps: 6000, preset: faster, profile: main }
+        - { name: 720p, width: 1280, height: 720, fps: "60000/1001", v_kbps: 3500, preset: veryfast, profile: main }
+        - { name: 540p, width: 960, height: 540, fps: "30000/1001", v_kbps: 1850, preset: veryfast, profile: main }
+        - { name: 360p, width: 640, height: 360, fps: "30000/1001", v_kbps: 1050, preset: veryfast, profile: main }
+        - { name: 240p, width: 426, height: 240, fps: "30000/1001", v_kbps: 650, preset: veryfast, profile: main }
+        # The cellular tier. Its own audio group is what lets it fit under 192 kb/s.
+        - { name: 240p-low, width: 426, height: 240, fps: "30000/1001", v_kbps: 96, preset: veryfast, profile: main, audio_group: low }
+        # The ordinary audio programme, shared by the five rungs above. It is also the
+        # transcription SIDE-FEED: its media playlist has a stable URL and is fetched
+        # directly rather than through the master (docs/API.md, the delivery surface).
+        - { name: audio, audio_only: true }
+        # The low tier's own quieter programme. A separate GROUP, not a second member
+        # of the one above: one group is one programme, and two members would be a
+        # choice a player makes rather than two tiers.
+        - { name: audio-low, audio_only: true, a_kbps: 64, audio_group: low }
+      audio: { codec: aac, rate: 48000, a_kbps: 128, language: en, normalize: true }
+
+delivery:
+  # Origin mode: this box serves HLS itself. A domain turns on auto-TLS on 80 and 443
+  # (install.sh --domain writes it here); without one it serves plain HTTP on 8080,
+  # which is what a box behind a TLS-terminating CDN wants.
+  # mode both serves AND uploads the live output to live_destination, which must name
+  # a storage.destinations entry (the `live` one below); an empty live_destination is
+  # unset in origin mode (docs/CONFIG.md, delivery).
+  mode: origin
+  live_destination: ""
+  origin:
+    # The box's own delivery name; empty is plain HTTP delivery with no ACME.
+    domain: ""  # the delivery name: install.sh --domain writes it here
+    listen_http: ":8080"
+
+# The live destination a both-mode box uploads to (docs/CONFIG.md 6.16, decision #147).
+# An entry with bucket, region, credentials, endpoint and prefix all empty is INERT
+# (dropped at load), as is a profile with neither key, so as shipped this block does
+# nothing: nothing is guessed. To upload, set five values: delivery.mode both,
+# delivery.live_destination live, and bucket, region and credentials (live) below, then
+# put the two keys in /etc/tmesis/.env as TMESIS_LIVE_ACCESS_KEY and
+# TMESIS_LIVE_SECRET_KEY. endpoint is the provider's HOST only for Fastly, B2, R2 and
+# S3 (a path that repeats the bucket writes every key under <bucket>/); empty is AWS
+# regional resolution. prefix is the live layout prefix. A half-filled entry or profile
+# is refused, field by field.
+storage:
+  destinations:
+    live:
+      bucket: ""
+      region: ""
+      endpoint: ""
+      prefix: ""
+      credentials: ""
+  credentials:
+    live:
+      access_key: "${TMESIS_LIVE_ACCESS_KEY:-}"
+      secret_key: "${TMESIS_LIVE_SECRET_KEY:-}"
+
+# The ingest recording (docs/CONFIG.md 6.6), ON for the origin too (decision D6): the
+# publisher's original bytes are kept under <data_dir>/artifacts/<generation>/ and are
+# the parts a told master is joined from. Nothing is deleted on retention alone:
+# retention_hours is the earliest a released recording may be retired. destination
+# empty keeps it local; an absolute path copies each finished file there, and a
+# destination_ref names a storage destination for a bucket (never both).
+recording:
+  ingest: { enabled: true, retention_hours: 72, destination: "" }
+
+# Live captions (docs/CONFIG.md 6.8). OFF as shipped. A production origin sets provider
+# to deepgram, and the Deepgram key reaches the box through /etc/tmesis/.env as
+# TMESIS_TRANSCRIPTION_API_KEY, never through this file: deepgram with an empty key is
+# refused at load.
+transcription:
+  provider: none
+  api_key: "${TMESIS_TRANSCRIPTION_API_KEY:-}"
+  # who transcribes VOD outputs; empty follows provider; a batch key under a self_hosted batch role fails the load
+  batch_provider: ""
+  # the batch key from .env; a non-empty value under a self_hosted batch role fails the load
+  batch_api_key: "${TMESIS_TRANSCRIPTION_BATCH_API_KEY:-}"
+  # the batch model; empty takes the live model when the batch role is the live provider
+  batch_model: ""
+  # the batch endpoint; empty takes the live endpoint when the batch role is the live provider
+  batch_endpoint: ""
+  # the live failover provider; none is no failover; must differ from provider; a fallback key under a self_hosted fallback role fails the load
+  fallback_provider: none
+  # the fallback key from .env; a non-empty value under a self_hosted fallback role fails the load
+  fallback_api_key: "${TMESIS_TRANSCRIPTION_FALLBACK_API_KEY:-}"
+  # the fallback model; empty takes the batch model when the fallback role is the batch role
+  fallback_model: ""
+  # the fallback endpoint; a self_hosted fallback takes the batch endpoint when it is empty
+  fallback_endpoint: ""
+  # The keyterms hook (docs/CONFIG.md 6.8, v0.8.0): while a stream captions, the node
+  # pulls its keyterms (a show's fight card) from this url. Empty is OFF. Set the url
+  # here and the secret in /etc/tmesis/.env as TMESIS_KEYTERMS_HOOK_SECRET.
+  keyterms_hook:
+    url: ""
+    secret: "${TMESIS_KEYTERMS_HOOK_SECRET:-}"
+
+# The low-delay preview (docs/CONFIG.md 6.15): WHEP on 8889/tcp, ICE on 8189/udp and
+# 8189/tcp. access is open as shipped (scope the three ports to producer networks); a
+# production origin sets granted, so a monitor connects only from a producer address
+# the control plane granted for a window. public_ips lists the address a box behind 1:1
+# NAT advertises; empty advertises the interfaces' own.
+preview:
+  access: open
+  ice: { public_ips: [] }
+
+# Webhooks are OFF while the url is empty, the shipped value. Set the url to report
+# stream events to a control plane. The secret, from .env, signs every delivery.
+webhooks: { url: "", secret: "${TMESIS_WEBHOOK_SECRET}" }
+
+# The admin API. Loopback as shipped; a production origin sets the address the control
+# plane dials (port 7000 opened to the control plane only) and, with it, TLS.
+#
+# TLS PER BOX, ONE RULE (docs/DEPLOY.md section 7): a box with a public name and 80 and
+# 443 open sets tls.domain and the node obtains and renews its own certificate; a box
+# that cannot answer the challenge is handed the file pair instead (cert_file and
+# key_file, /etc/tmesis/api.crt and /etc/tmesis/api.key from the bootstrap). All three
+# empty is plain HTTP. Never both ways: validation refuses a domain beside a pair.
+api:
+  listen: "127.0.0.1:7000"
+  admin_token: ${TMESIS_ADMIN_TOKEN}
+  tls:
+    domain: ""
+    cert_file: ""
+    key_file: ""

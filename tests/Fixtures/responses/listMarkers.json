@@ -1,0 +1,40 @@
+{
+  "markers": [
+    {
+      "id": "break-2041-3",
+      "stream": "show-2041-main",
+      "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+      "kind": "out",
+      "class": "com.hackney.tmesis.scte35",
+      "at": null,
+      "duration_seconds": 30,
+      "scte35": null,
+      "state": "placed",
+      "start_date": "2026-08-28T19:26:54.006Z",
+      "placed_at": "2026-08-28T19:26:54.212Z",
+      "complete": true,
+      "placements": [
+        {"rendition": "480p", "segment_index": 143, "media_sequence": 143, "program_date_time": "2026-08-28T19:26:48Z"},
+        {"rendition": "720p", "segment_index": 143, "media_sequence": 143, "program_date_time": "2026-08-28T19:26:48Z"},
+        {"rendition": "audio", "segment_index": 143, "media_sequence": 143, "program_date_time": "2026-08-28T19:26:47.994Z"}
+      ],
+      "created_at": "2026-08-28T19:26:51.370Z"
+    },
+    {
+      "id": "break-2041-3-in",
+      "stream": "show-2041-main",
+      "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+      "kind": "in",
+      "class": "com.hackney.tmesis.scte35",
+      "at": "2026-08-28T19:27:24.006Z",
+      "duration_seconds": 30,
+      "scte35": "FC302000000000000000FFF00F05000000017FEFFE0029325E0000000000009A1A8B11",
+      "state": "queued",
+      "start_date": null,
+      "placed_at": null,
+      "complete": false,
+      "placements": [],
+      "created_at": "2026-08-28T19:26:52.101Z"
+    }
+  ]
+}

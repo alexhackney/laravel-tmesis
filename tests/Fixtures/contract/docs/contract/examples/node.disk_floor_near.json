@@ -1,0 +1,14 @@
+{
+  "event": "node.disk_floor_near",
+  "delivery": "01J8ZDY4H6K2NQX8VW5TRB3PF1",
+  "occurred_at": "2026-08-28T21:12:03.481Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "data_dir": "/var/lib/tmesis",
+  "free_bytes": 6549825126,
+  "total_bytes": 64424509440,
+  "floor_bytes": 5368709120,
+  "headroom_bytes": 1181116006,
+  "margin_bytes": 1288490188
+}

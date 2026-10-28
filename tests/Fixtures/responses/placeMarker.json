@@ -1,0 +1,18 @@
+{
+  "marker": {
+    "id": "break-2041-3",
+    "stream": "show-2041-main",
+    "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+    "kind": "out",
+    "class": "com.hackney.tmesis.scte35",
+    "at": null,
+    "duration_seconds": 30,
+    "scte35": null,
+    "state": "queued",
+    "start_date": null,
+    "placed_at": null,
+    "complete": false,
+    "placements": [],
+    "created_at": "2026-08-28T19:26:51.370Z"
+  }
+}

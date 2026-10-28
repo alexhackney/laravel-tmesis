@@ -1,0 +1,300 @@
+{
+  "stream": "show-2041-main",
+  "open": true,
+  "session": {
+    "id": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+    "session_epoch": 3,
+    "protocol": "srt",
+    "remote": "198.51.100.42:9000",
+    "latency_ms": 120,
+    "started_at": "2026-08-28T19:12:01.482Z",
+    "uptime_seconds": 841.636,
+    "closed_at": null,
+    "reconnects": 0,
+    "held_since": null
+  },
+  "ingest": {
+    "bytes_total": 21493022208,
+    "bitrate_bps": 4198400,
+    "rate_window_seconds": 10,
+    "dropped_packets_total": 0,
+    "dropped_bytes_total": 0,
+    "drops": [],
+    "ts_cc_errors_total": 0,
+    "last_packet_at": "2026-08-28T19:26:03.094Z",
+    "seconds_since_last_packet": 0.024,
+    "arrival_gap_max_seconds": 0.041
+  },
+  "source": {
+    "codec": "h264",
+    "width": 1920,
+    "height": 1080,
+    "fps": "60000/1001",
+    "audio_codec": "aac",
+    "bitrate_bps": 5943000,
+    "probed_at": "2026-08-28T19:12:02.104Z",
+    "probe_ms": 412
+  },
+  "encode": [
+    {
+      "rung": "720p",
+      "speed_ratio": 1.02,
+      "fps": 59.94,
+      "frames_total": 50432,
+      "dropped_frames_total": 0,
+      "restarts": 0,
+      "resolved_fps": "60000/1001",
+      "last_progress_at": "2026-08-28T19:26:02.980Z",
+      "seconds_since_last_progress": 0.138,
+      "last_fragment_at": "2026-08-28T19:26:02.418Z",
+      "seconds_since_last_fragment": 0.7,
+      "seconds_below_realtime": null
+    },
+    {
+      "rung": "480p",
+      "speed_ratio": 1.31,
+      "fps": 29.97,
+      "frames_total": 25216,
+      "dropped_frames_total": 0,
+      "restarts": 0,
+      "resolved_fps": "60000/1001",
+      "last_progress_at": "2026-08-28T19:26:02.980Z",
+      "seconds_since_last_progress": 0.138,
+      "last_fragment_at": "2026-08-28T19:26:02.512Z",
+      "seconds_since_last_fragment": 0.606,
+      "seconds_below_realtime": null
+    }
+  ],
+  "ring": [
+    {
+      "rung": "ingest",
+      "unit": "bytes",
+      "depth_fragments": 188000,
+      "capacity_fragments": 33554432,
+      "fill_ratio": 0.005603,
+      "dropped_fragments_total": 0,
+      "drops": [],
+      "last_drop_at": null,
+      "seconds_since_last_drop": null
+    },
+    {
+      "rung": "720p",
+      "unit": "fragments",
+      "depth_fragments": 3,
+      "capacity_fragments": 240,
+      "fill_ratio": 0.0125,
+      "dropped_fragments_total": 0,
+      "drops": [],
+      "last_drop_at": null,
+      "seconds_since_last_drop": null
+    },
+    {
+      "rung": "480p",
+      "unit": "fragments",
+      "depth_fragments": 2,
+      "capacity_fragments": 240,
+      "fill_ratio": 0.008333,
+      "dropped_fragments_total": 12,
+      "drops": [
+        {
+          "reason": "ring_full",
+          "count": 12
+        }
+      ],
+      "last_drop_at": "2026-08-28T19:13:44.210Z",
+      "seconds_since_last_drop": 738.908
+    }
+  ],
+  "delivery": {
+    "mode": "bucket",
+    "origin_serving": false,
+    "live_destination": "live",
+    "segments_total": 280,
+    "media_sequence": 140,
+    "last_segment_at": "2026-08-28T19:25:58.732Z",
+    "seconds_since_last_segment": 4.386,
+    "packager_drain_outcome": "",
+    "renditions": [
+      {
+        "rendition": "720p",
+        "segments_total": 140,
+        "media_sequence": 140,
+        "last_segment_duration_seconds": 6.006,
+        "last_segment_at": "2026-08-28T19:25:58.732Z",
+        "seconds_since_last_segment": 4.386,
+        "packager_dropped_total": 0,
+        "packager_drops": [],
+        "sink_failures_total": 0,
+        "sink_failures": [],
+        "journal_failures_total": 0
+      },
+      {
+        "rendition": "480p",
+        "segments_total": 140,
+        "media_sequence": 140,
+        "last_segment_duration_seconds": 6.006,
+        "last_segment_at": "2026-08-28T19:25:58.744Z",
+        "seconds_since_last_segment": 4.374,
+        "packager_dropped_total": 3,
+        "packager_drops": [
+          {
+            "reason": "awaiting_keyframe",
+            "count": 3
+          }
+        ],
+        "sink_failures_total": 1,
+        "sink_failures": [
+          {
+            "reason": "segment",
+            "count": 1
+          }
+        ],
+        "journal_failures_total": 0
+      }
+    ],
+    "upload": {
+      "queue_depth": 0,
+      "bytes_total": 3221225472,
+      "ok_total": 280,
+      "failed_total": 1,
+      "last_lag_seconds": 0.412,
+      "last_upload_at": "2026-08-28T19:25:59.144Z",
+      "seconds_since_last_upload": 3.974
+    },
+    "manifest": {
+      "published_total": 280,
+      "last_published_at": "2026-08-28T19:25:58.980Z",
+      "since_last_published_seconds": 4.138,
+      "last_latency_seconds": 0.248
+    }
+  },
+  "recording": [
+    {
+      "artifact": "ingest",
+      "recording_id": "01J8ZCK5M2V8QNX4RW7TKB3PD9",
+      "state": "active",
+      "part": 0,
+      "container": "mpegts",
+      "path": "/var/lib/tmesis/recordings/show-2041-main/01J8ZC8XKWQ4M7T0K3PZ2B9RVN-ingest-0.ts",
+      "bytes_total": 9184002048,
+      "dropped_bytes": 0,
+      "duration_seconds": 841.598,
+      "started_at": "2026-08-28T19:12:01.520Z",
+      "ended_at": null
+    }
+  ],
+  "preview": {
+    "enabled": true,
+    "monitors": 1,
+    "max_monitors": 50,
+    "frames_video_total": 50432,
+    "frames_audio_total": 39450,
+    "tap_dropped_total": 0,
+    "send_errors_total": 0,
+    "sessions_total": 1
+  },
+  "captions": {
+    "state": "live",
+    "provider": "deepgram",
+    "request_id": "8f1c2a7e-5b3d-4e9a-9c1f-2d7b6a4e0c31",
+    "finals": 412,
+    "dropped_pcm_ms": 0,
+    "reconnects": 1,
+    "reason": ""
+  },
+  "suppressed_updates": 0,
+  "observed_at": "2026-08-28T19:26:03.118Z",
+  "transport": [
+    {
+      "rung": "720p",
+      "url": "http://127.0.0.1:41821/rung/720p",
+      "connected": true,
+      "outcome": "pending",
+      "have_init_segment": true,
+      "init_segment_bytes": 1204,
+      "tracks": 2,
+      "fragments_total": 1524,
+      "fragment_bytes_total": 2415919104,
+      "last_fragment_at": "2026-08-28T19:26:02.418Z",
+      "seconds_since_last_fragment": 0.7,
+      "socket_bytes_total": 2415920308,
+      "discarded_bytes_total": 0,
+      "rejected_connections_total": 0,
+      "ring": {
+        "depth_fragments": 3,
+        "capacity_fragments": 240,
+        "depth_bytes": 4718592,
+        "capacity_bytes": 268435456,
+        "dropped_fragments_total": 0,
+        "dropped_bytes_total": 0,
+        "dropped_keyframes_total": 0,
+        "oversize_admitted_total": 0
+      }
+    },
+    {
+      "rung": "480p",
+      "url": "http://127.0.0.1:41822/rung/480p",
+      "connected": true,
+      "outcome": "pending",
+      "have_init_segment": true,
+      "init_segment_bytes": 1188,
+      "tracks": 2,
+      "fragments_total": 1524,
+      "fragment_bytes_total": 966367641,
+      "last_fragment_at": "2026-08-28T19:26:02.512Z",
+      "seconds_since_last_fragment": 0.606,
+      "socket_bytes_total": 966368829,
+      "discarded_bytes_total": 0,
+      "rejected_connections_total": 0,
+      "ring": {
+        "depth_fragments": 2,
+        "capacity_fragments": 240,
+        "depth_bytes": 1572864,
+        "capacity_bytes": 268435456,
+        "dropped_fragments_total": 12,
+        "dropped_bytes_total": 9437184,
+        "dropped_keyframes_total": 1,
+        "oversize_admitted_total": 0
+      }
+    }
+  ],
+  "packager": [
+    {
+      "rendition": "720p",
+      "segments_announced": 12,
+      "media_sequence": 140,
+      "target_duration": 7,
+      "open_fragments": 2,
+      "awaiting_keyframe": false,
+      "discontinuities_total": 0,
+      "encoder_gaps_total": 0,
+      "splices_total": 0,
+      "dropped_fragments_total": 0,
+      "sink_failures_total": 0,
+      "journal_failures_total": 0,
+      "sealed": false,
+      "failed": false,
+      "last_segment_at": "2026-08-28T19:25:58.732Z",
+      "seconds_since_last_segment": 4.386
+    },
+    {
+      "rendition": "480p",
+      "segments_announced": 12,
+      "media_sequence": 140,
+      "target_duration": 7,
+      "open_fragments": 1,
+      "awaiting_keyframe": false,
+      "discontinuities_total": 1,
+      "encoder_gaps_total": 0,
+      "splices_total": 0,
+      "dropped_fragments_total": 3,
+      "sink_failures_total": 1,
+      "journal_failures_total": 0,
+      "sealed": false,
+      "failed": false,
+      "last_segment_at": "2026-08-28T19:25:58.744Z",
+      "seconds_since_last_segment": 4.374
+    }
+  ],
+  "degraded_reasons": []
+}

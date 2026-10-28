@@ -1,0 +1,205 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/CaptionSessionEnded",
+  "$defs": {
+    "CaptionPlayback": {
+      "type": "object",
+      "properties": {
+        "playlist": {
+          "type": "string",
+          "description": "The caption playlist at the stream root: the DVR one while live (captions_en_dvr.m3u8 for en), the ended one once sealed (captions_en.m3u8, rewritten in place since v0.8.0; it was captions_en_vod.m3u8)."
+        },
+        "vtt": {
+          "description": "The WebVTT transcript sidecar under the language's captions directory (captions/en/transcript.vtt for en); null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "srt": {
+          "description": "The SRT transcript sidecar under the language's captions directory (captions/en/transcript.srt for en); null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "json": {
+          "description": "The JSON transcript sidecar under the language's captions directory (captions/en/transcript.json for en): one row per final cue with word timings, the feed a control plane indexes; null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "playlist",
+        "vtt",
+        "srt",
+        "json"
+      ],
+      "additionalProperties": false
+    },
+    "CaptionSessionEnded": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "caption.session_ended"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "The publish session this caption session belonged to."
+        },
+        "epoch": {
+          "type": "integer"
+        },
+        "lang": {
+          "type": "string",
+          "description": "The RFC 5646 tag this session captioned in."
+        },
+        "provider": {
+          "type": "string",
+          "description": "The STT provider: deepgram or self_hosted."
+        },
+        "provider_request_id": {
+          "description": "The provider's id for the socket that closed; null when it never reported one.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "CLOSED set, additive inside v1: why the session closed. stream_ended, disabled and provider_switch are the node's own closes; auth_error and quota_exceeded are never retried and need an operator; rate_limited, provider_closed and unreachable are retried on a capped backoff, and gave_up is that cap reached. stalled (since v0.9.3) is the node ending a session whose provider was connected while audio was flowing and answered none of it for 60 s, answered it too late, or lost too much of it (detail says which); local silence and silence the provider answers empty are never a stall. Since v0.9.4 an outage (no live transport: the provider unreachable, refusing or dropping connections) is never a stall: a short one rides through on the same session with no end, and a long one ends gave_up about 60 s after the first failure. Since v0.9.1 gave_up, rate_limited, provider_closed and unreachable resume by themselves when the provider answers again, and since v0.9.3 so does stalled, no sooner than 15 s after the stall: a caption.session_started with resumed_after may follow in the same publish session. Since v0.9.2 a node with a transcription.fallback_provider may instead bring a degraded stream back on the other provider (auth_error and quota_exceeded included), and provider_switch is the node ending a working or retrying session to move the stream to its other provider, detail saying why: a caption.session_started with switched_from follows, on the other provider, in the same publish session.",
+          "enum": [
+            "stream_ended",
+            "disabled",
+            "auth_error",
+            "quota_exceeded",
+            "rate_limited",
+            "provider_closed",
+            "unreachable",
+            "gave_up",
+            "provider_switch",
+            "stalled"
+          ]
+        },
+        "detail": {
+          "description": "The provider's own message for the close, verbatim (a refused handshake's body, a close reason, an error string), never the key. null when the close had no message, which is every close the node made itself (stream_ended, disabled), except provider_switch, whose detail says why the node moved the stream, and stalled, whose detail says what the node measured.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "finals": {
+          "type": "integer",
+          "description": "Final results journaled over the session."
+        },
+        "dropped_pcm_ms": {
+          "type": "integer",
+          "description": "Audio dropped on the tap's ring or during a reconnect, in milliseconds: the same drop-and-count every media-path writer reports."
+        },
+        "reconnects": {
+          "type": "integer",
+          "description": "Sockets re-opened after a failure, cumulative over the stream's captioner (a later caption.session_ended in the same publish session includes the earlier ones). None fires caption.session_started (since v0.9.3)."
+        },
+        "sockets": {
+          "type": "integer",
+          "description": "Provider sockets opened, cumulative over the stream's captioner like reconnects: every reconnect, rotation and re-anchor opens one, and none fires caption.session_started. A self_hosted socket counts once the sidecar has answered on it. Since v0.9.3."
+        },
+        "rotations": {
+          "type": "integer",
+          "description": "Sockets replaced on purpose because the feed queue shed audio and the byte stream on a socket must stay contiguous, cumulative over the stream's captioner like reconnects; Deepgram only. Since v0.9.3."
+        },
+        "artifacts": {
+          "description": "The seal's output for this language, the same object stream.sealed's vod.captions carries under this lang: present only on a stream_ended close after the seal wrote them, null on every other reason and on a live close.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/CaptionPlayback"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "lang",
+        "provider",
+        "provider_request_id",
+        "reason",
+        "detail",
+        "finals",
+        "dropped_pcm_ms",
+        "reconnects",
+        "sockets",
+        "rotations",
+        "artifacts",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

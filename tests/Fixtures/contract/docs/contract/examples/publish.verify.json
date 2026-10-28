@@ -1,0 +1,18 @@
+{
+  "event": "publish.verify",
+  "delivery": "01J8ZC9FN8M2QWX4VK7TRB5PD1",
+  "occurred_at": "2026-08-28T19:12:01.204Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "key_type": "signed",
+  "key_id": "2026-08",
+  "key_fragment": "show-2041-main.7.a5e4...2ff2",
+  "key_epoch": 7,
+  "protocol": "srt",
+  "remote": "198.51.100.24:51402",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "open_posture": false,
+  "takeover": false
+}

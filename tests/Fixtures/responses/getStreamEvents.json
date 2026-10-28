@@ -1,0 +1,29 @@
+{
+  "stream": "show-2041-main",
+  "count": 2,
+  "limit": 200,
+  "events": [
+    {
+      "id": "01J8ZC9GQ2M4YE7XW1RN0P6VTB",
+      "stream": "show-2041-main",
+      "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+      "at": "2026-08-28T19:12:01.482Z",
+      "level": "info",
+      "kind": "publish.accepted",
+      "message": "publisher accepted on srt",
+      "details": {
+        "protocol": "srt"
+      }
+    },
+    {
+      "id": "01J8ZCE9M3K7QW2XVR5NB8TDH4",
+      "stream": "show-2041-main",
+      "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+      "at": "2026-08-28T19:12:14.902Z",
+      "level": "info",
+      "kind": "packager.started",
+      "message": "packager started for 3 renditions",
+      "details": null
+    }
+  ]
+}

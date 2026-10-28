@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/JobFailed",
+  "$defs": {
+    "JobError": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "The failure, from API.md 9.11's closed vocabulary (source_unreadable, source_changed, source_unsupported, disk_insufficient, package_incomplete, timeout, cancelled, ...)."
+        },
+        "class": {
+          "type": "string",
+          "description": "permanent is never retried by the node or the control plane; transient was already retried by the node up to jobs.max_attempts.",
+          "enum": [
+            "permanent",
+            "transient"
+          ]
+        },
+        "message": {
+          "type": "string"
+        },
+        "stage": {
+          "type": "string",
+          "description": "The stage it happened in. Absent for a failure outside any stage (a cancel of a queued job).",
+          "enum": [
+            "fetch",
+            "probe",
+            "audio",
+            "encode",
+            "package",
+            "thumbnails",
+            "transcribe",
+            "upload",
+            "verify"
+          ]
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "Whether resubmitting the same job could succeed."
+        }
+      },
+      "required": [
+        "code",
+        "class",
+        "message",
+        "retryable"
+      ],
+      "additionalProperties": false
+    },
+    "JobFailed": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "job.failed"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "job": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "description": "failed, or cancelled for a DELETE (with error.code cancelled).",
+          "enum": [
+            "failed",
+            "cancelled"
+          ]
+        },
+        "attempts": {
+          "type": "integer"
+        },
+        "evictions": {
+          "type": "integer"
+        },
+        "stage": {
+          "description": "The stage it ended in; null for a job that never ran.",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "fetch",
+                "probe",
+                "audio",
+                "encode",
+                "package",
+                "thumbnails",
+                "transcribe",
+                "upload",
+                "verify"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "error": {
+          "$ref": "#/$defs/JobError"
+        },
+        "landed": {
+          "type": "array",
+          "description": "Objects already transferred when the job ended; [] when none. The node never deletes remotely (API.md 9.12), so this is the list a caller removes itself.",
+          "items": {
+            "$ref": "#/$defs/JobLandedObject"
+          }
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "job",
+        "state",
+        "attempts",
+        "evictions",
+        "stage",
+        "error",
+        "landed",
+        "labels"
+      ],
+      "additionalProperties": false
+    },
+    "JobLandedObject": {
+      "type": "object",
+      "properties": {
+        "generation": {
+          "type": "string"
+        },
+        "target_id": {
+          "type": "string"
+        },
+        "object_key": {
+          "type": "string",
+          "description": "The object's key at its target, bucket-relative."
+        }
+      },
+      "required": [
+        "generation",
+        "target_id",
+        "object_key"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/RecordingRegistered",
+  "$defs": {
+    "RecordingRegistered": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "recording.registered"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "The session this recording belongs to (one file, one session, as built). Correlate on recording_id."
+        },
+        "recording_id": {
+          "type": "string"
+        },
+        "artifact": {
+          "type": "string",
+          "description": "The two are registered separately and retained separately. A receiver that merges them loses the distinction between the insurance copy and the as-aired program.",
+          "enum": [
+            "ingest",
+            "master"
+          ]
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "registered"
+          ]
+        },
+        "destination": {
+          "type": "string",
+          "description": "Where the artifact is durable. Told, never derived. This is the location a control plane attaches: the absolute path after a copy to a directory, the node's local path when no destination was configured (then it equals local_path), or, for a destination_ref recording, the location of the told plan target whose completion registered it (the transfer executor, since v0.5.0)."
+        },
+        "container": {
+          "type": "string",
+          "description": "The container as delivered. Always mpegts or flv for the ingest artifact (final plan 11.34 D1); mp4 for the told master.",
+          "enum": [
+            "mp4",
+            "mpegts",
+            "flv",
+            "none"
+          ]
+        },
+        "bytes": {
+          "type": "integer"
+        },
+        "dropped_bytes_total": {
+          "type": "integer"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "checksum_sha256": {
+          "type": "string"
+        },
+        "local_path": {
+          "type": "string",
+          "description": "The node's copy. Since v0.5.0 it is retired only once retention_expires_at has passed AND an explicit release, override or discard names its generation, never on registration alone and never on this delivery's acknowledgement; when destination equals this path, a release is the decision to remove the only copy. A recording finalized before v0.5.0 (generation null) is never retired by the node."
+        },
+        "generation": {
+          "description": "The recording's artifact generation, the id the /artifacts routes key on. Null only for a registration with no artifact row.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "registered_at": {
+          "type": "string",
+          "description": "When registration was confirmed. retention_expires_at counts from HERE, not from finalize."
+        },
+        "retention_expires_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, docs/API.md section 4"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "source_generations": {
+          "type": "array",
+          "description": "The told master's source generations (recording_ingest) in join order. Always [] for the ingest artifact.",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "recording_id",
+        "artifact",
+        "state",
+        "destination",
+        "container",
+        "bytes",
+        "dropped_bytes_total",
+        "duration_seconds",
+        "checksum_sha256",
+        "local_path",
+        "generation",
+        "registered_at",
+        "retention_expires_at",
+        "labels",
+        "source_generations"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

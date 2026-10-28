@@ -1,0 +1,410 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/HeartbeatResponse",
+  "$defs": {
+    "Command": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Idempotency key. The node performs the act once per id and re-acks a replay."
+        },
+        "kind": {
+          "type": "string",
+          "description": "CLOSED set of five.",
+          "enum": [
+            "drain",
+            "kick",
+            "seal",
+            "update",
+            "reload_env"
+          ]
+        },
+        "stream": {
+          "description": "Required for kick and seal, null for drain, update, and reload_env.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "args": {
+          "type": "object",
+          "description": "Per-kind arguments, docs/API.md section 15. drain: none. kick: none. seal: grace_seconds. update: version. reload_env: none.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "stream",
+        "args"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "kick",
+                  "seal"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "stream": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "stream"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "drain",
+                  "reload_env",
+                  "update"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "stream": {
+                "const": null
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "drain",
+                  "kick",
+                  "reload_env"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "type": "object",
+                "maxProperties": 0
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "seal"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "type": "object",
+                "required": [
+                  "grace_seconds"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "update"
+                ]
+              }
+            },
+            "required": [
+              "kind"
+            ]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "type": "object",
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "DesiredJobsPause": {
+      "type": "object",
+      "properties": {
+        "until": {
+          "description": "RFC 3339 UTC: when the pause ends by itself. null: until the control plane clears it. A time already past is accepted and simply inactive. Required key.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why, 1 to 200 bytes, shown verbatim in health, doctor, the heartbeat and the jobs.paused webhook (for example show: fight night 12)."
+        }
+      },
+      "required": [
+        "until",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "DesiredRecording": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "retention_hours": {
+          "type": "integer",
+          "description": "Counted from REGISTRATION, not from finalize. An unregistered artifact is never swept (final plan 11.17).",
+          "minimum": 1
+        },
+        "destination": {
+          "description": "An absolute directory, or null for the node default. Never set together with destination_ref.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "destination_ref": {
+          "description": "A storage.destinations name, or null for the node default. Never set together with destination.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "retention_hours",
+        "destination",
+        "destination_ref"
+      ],
+      "additionalProperties": false
+    },
+    "DesiredRelay": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "description": "srt://, rtmp://, or rtmps://. Those three schemes are the whole set."
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "enabled"
+      ],
+      "additionalProperties": false
+    },
+    "DesiredState": {
+      "type": "object",
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "description": "Monotonic, 1 or above (0 is the node's 'nothing applied'). The node applies one revision transactionally and reports it back in desired_revision_applied.",
+          "minimum": 1
+        },
+        "streams": {
+          "type": "array",
+          "description": "FULL replacement for the fleet-owned stream set. Empty means the fleet owns no streams here; it does not mean unchanged.",
+          "items": {
+            "$ref": "#/$defs/DesiredStream"
+          }
+        },
+        "revocations": {
+          "type": "array",
+          "description": "FULL replacement for the revocation list. Required array: always serialises as [] (empty array), never null. A partial revocation list is worse than none, so the fleet sends [] to clear it.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_posture": {
+          "type": "boolean",
+          "description": "Whether this node accepts a validly signed key for a stream it has never seen."
+        },
+        "jobs_pause": {
+          "description": "The told jobs pause: the node claims no new transcode job until it ends, running jobs finish, queued jobs wait. FULL replacement: null or absent clears a pause the fleet set (and an API pause the box held when it joined). Optional: a control plane that predates it sends none, which reads as no fleet pause. The pause belongs to this enrollment and ends with it.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/DesiredJobsPause"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "revision",
+        "streams",
+        "revocations",
+        "open_posture"
+      ],
+      "additionalProperties": false
+    },
+    "DesiredStream": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "min_key_epoch": {
+          "type": "integer",
+          "description": "Reject keys below this epoch. It applies to the next handshake and never disconnects an attached publisher.",
+          "minimum": 0
+        },
+        "labels": {
+          "type": "object",
+          "description": "Opaque, echoed in every webhook for this stream. The node never interprets them.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "recording": {
+          "$ref": "#/$defs/DesiredRecording"
+        },
+        "relays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DesiredRelay"
+          }
+        },
+        "lease": {
+          "description": "The told grant of this stream's live output prefix, or null when the fleet does not manage it. Optional: absent is null, so a control plane that predates it changes nothing.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/StreamLease"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "min_key_epoch",
+        "labels",
+        "recording",
+        "relays"
+      ],
+      "additionalProperties": false
+    },
+    "HeartbeatResponse": {
+      "type": "object",
+      "properties": {
+        "ack_event_ids": {
+          "type": "array",
+          "description": "Ids from the request's events[] the receiver has durably recorded. Anything not listed is retried.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "desired_state": {
+          "description": "null means no revision change. When present it is a full snapshot, never a delta.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/DesiredState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "commands": {
+          "type": "array",
+          "description": "At-least-once, idempotent by id, re-sent until acked. A command never changes desired state and desired state never carries a command.",
+          "items": {
+            "$ref": "#/$defs/Command"
+          }
+        }
+      },
+      "required": [
+        "ack_event_ids",
+        "desired_state",
+        "commands"
+      ],
+      "additionalProperties": false
+    },
+    "StreamLease": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "integer",
+          "description": "The fencing epoch the control plane granted, 1 or above. Its own domain, never the node's local lease epoch.",
+          "minimum": 1
+        },
+        "holder": {
+          "type": "string",
+          "description": "The fleet node id (enroll response node_id) that holds the prefix at this epoch. Any other node writes nothing to the prefix."
+        }
+      },
+      "required": [
+        "epoch",
+        "holder"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

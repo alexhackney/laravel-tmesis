@@ -1,0 +1,54 @@
+{
+  "id": "show-2041-main",
+  "state": "live",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "epoch": 3,
+  "protocol": "srt",
+  "started_at": "2026-08-28T19:12:01.482Z",
+  "ladder": "broadcast-720p",
+  "segment_seconds": 6,
+  "dvr_window_seconds": 0,
+  "delivery_mode": "bucket",
+  "min_key_epoch": 7,
+  "webhook_url": null,
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  },
+  "recording": {
+    "ingest": {
+      "enabled": true,
+      "retention_hours": 72,
+      "destination": "/mnt/archive/ingest",
+      "destination_ref": null
+    }
+  },
+  "preview": {
+    "enabled": true,
+    "max_monitors": 50
+  },
+  "captions": {
+    "enabled": true,
+    "advertise": true,
+    "provider": "deepgram",
+    "languages": [
+      "en"
+    ],
+    "keyterms": [
+      "Ilia Topuria",
+      "Cage Sport Network",
+      "State Farm Arena",
+      "Atlanta"
+    ]
+  },
+  "fallback": {
+    "end_seconds": 3600
+  },
+  "version": 4,
+  "created_at": "2026-08-28T18:40:07.115Z",
+  "updated_at": "2026-08-28T19:26:44.900Z",
+  "sealed_at": null,
+  "playback": {
+    "master": "https://cdn.example.com/hls/show-2041-main/playlist_dvr.m3u8"
+  }
+}

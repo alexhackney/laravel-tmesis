@@ -1,0 +1,19 @@
+* text=auto eol=lf
+
+/.github            export-ignore
+/.gitattributes     export-ignore
+/.gitignore         export-ignore
+/phpunit.xml.dist   export-ignore
+/phpstan.neon       export-ignore
+/pint.json          export-ignore
+
+# The reference receiver is a GATE TOOL, not shipped runtime: orchestra/workbench is a
+# dev dependency, so these files would be inert in a consumer's vendor directory. The
+# tmesis CI job checks out this REPOSITORY rather than the Packagist archive, so
+# export-ignoring them does not put the M1 gate out of reach.
+/testbench.yaml     export-ignore
+/workbench          export-ignore
+
+# tests/ is NOT export-ignored. tests/Fixtures/contract/ must reach a consumer's
+# vendor/ directory: tmesis:doctor checks the bundled artifacts are present, and
+# v0.2's contract.validate_incoming reads the schemas from there at runtime.

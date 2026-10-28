@@ -1,0 +1,43 @@
+{
+  "_comment": [
+    "test/vectors/keyterms.json: worked keyterms hook RESPONSES, the body a control plane",
+    "returns to the node's keyterms hook GET (docs/WEBHOOKS.md, the keyterms hook;",
+    "the keyterms plan 4.1b, tmesis v0.8.0 WP12).",
+    "",
+    "HAND-WRITTEN, NOT GENERATED, for the reason hook.json is: the control plane authors",
+    "these bytes. internal/webhook's TestKeytermsVectorsDecodeAsDocumented serves each",
+    "body through a real KeytermsHook.Fetch and holds it to the keyterms named under",
+    "'keyterms' (the list in force afterwards). 'status' is the HTTP status the body is",
+    "served with; a 204 or 404 carries no body and means no keyterms."
+  ],
+  "responses": [
+    {
+      "name": "a fight card",
+      "schema": "keyterms.hook.response",
+      "status": 200,
+      "body": {
+        "keyterms": ["Hector Rodriguez", "Conor McGregor", "UFC", "T-Mobile Arena", "Las Vegas"]
+      },
+      "keyterms": ["Hector Rodriguez", "Conor McGregor", "UFC", "T-Mobile Arena", "Las Vegas"]
+    },
+    {
+      "name": "no keyterms for this show",
+      "schema": "keyterms.hook.response",
+      "status": 200,
+      "body": {
+        "keyterms": []
+      },
+      "keyterms": []
+    },
+    {
+      "name": "no content",
+      "status": 204,
+      "keyterms": []
+    },
+    {
+      "name": "the control plane does not know the stream",
+      "status": 404,
+      "keyterms": []
+    }
+  ]
+}

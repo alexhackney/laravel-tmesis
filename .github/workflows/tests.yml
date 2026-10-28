@@ -1,0 +1,160 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The tmesis tag whose contract this package carries. The package releases the
+  # same version string as that tmesis release, so this
+  # names a tag that already exists before the package release, and it matches the
+  # PROVENANCE.md Tag row (the full Commit row for an untagged pin). bin/repin writes
+  # it, and the provenance leg (tests/Contract/WorkflowPinTest.php) fails when the two
+  # disagree.
+  TMESIS_TAG: v0.9.5
+
+jobs:
+  pint:
+    name: pint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - uses: ramsey/composer-install@v4
+
+      - run: vendor/bin/pint --test
+
+  phpstan:
+    name: phpstan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - uses: ramsey/composer-install@v4
+
+      - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+  em-dashes:
+    name: em dashes
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      # The same check tmesis runs. An em dash is a house style violation and this
+      # gate is what keeps it out of a public repo.
+      - name: no em dashes
+        run: |
+          if LC_ALL=C grep -rn $'\xe2\x80\x94' --exclude-dir=.git --exclude-dir=vendor .; then
+            echo "::error::em dash found (see the lines above)"
+            exit 1
+          fi
+
+  tests:
+    name: php ${{ matrix.php }} / laravel ${{ matrix.laravel }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # The primary cell: what the package is developed and released against.
+          - php: '8.4'
+            laravel: '13.*'
+            testbench: '11.*'
+          - php: '8.3'
+            laravel: '12.*'
+            testbench: '10.*'
+          - php: '8.4'
+            laravel: '12.*'
+            testbench: '10.*'
+          - php: '8.5'
+            laravel: '13.*'
+            testbench: '11.*'
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+
+      - name: pin the framework for this cell
+        run: >
+          composer require --dev --no-update
+          "laravel/framework:${{ matrix.laravel }}"
+          "orchestra/testbench:${{ matrix.testbench }}"
+
+      - uses: ramsey/composer-install@v4
+        with:
+          dependency-versions: highest
+
+      # --fail-on-empty-test-suite is explicit rather than inherited: a run that
+      # matches no tests is a broken invocation, not a green build. Pest 4 already
+      # exits non-zero on an empty suite, and pinning the flag keeps that true if a
+      # future PHPUnit default flips or someone adds the --do-not- form.
+      # The reference receiver's boot smoke test shells out to vendor/bin/testbench,
+      # so it runs on the PRIMARY CELL ONLY (D4): Workbench is a gate tool rather
+      # than shipped runtime, and the contract legs still run on every other cell.
+      # Everywhere else the two tests skip, naming this variable.
+      - run: vendor/bin/pest --ci --fail-on-empty-test-suite
+        env:
+          TMESIS_RECEIVER_SMOKE: ${{ matrix.php == '8.4' && matrix.laravel == '13.*' && '1' || '0' }}
+
+  contract-bundled:
+    name: contract (bundled artifacts)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - uses: ramsey/composer-install@v4
+
+      # TMESIS_CONTRACT_DIR is deliberately unset: this leg proves the vendored
+      # copies under tests/Fixtures/contract/ are the ones the package was built
+      # against, starting with their sha256 provenance.
+      #
+      # ONE INVOCATION PER GROUP, on purpose. A single combined run cannot tell
+      # "this group has no tests" from "this group was not asked for": with eight
+      # --group flags and one of them misspelled, the run passes on the other seven
+      # and the whole misspelled leg disappears silently. Per group, a name that
+      # matches nothing is an empty suite, and --fail-on-empty-test-suite makes that
+      # a failure. The combined form stays in docs/contract-suite.md as the local command.
+      #
+      # Nine legs at v0.3.1: schemas-requests is new (eight at v0.2, where
+      # schemas-fleet, hook-endpoint and routes arrived). Eleven at v0.7.0:
+      # fleet-receiver drives the fleet vector through the package's own routes.
+      # Twelve at v0.8.0: vectors-keyterms serves test/vectors/keyterms.json through
+      # the keyterms hook route.
+      - name: contract suite against the bundled copies
+        run: |
+          failed=0
+          for group in provenance vectors-keys vectors-webhooks vectors-hook vectors-keyterms \
+                       schemas-events schemas-fleet fleet-receiver hook-endpoint schemas-responses schemas-requests routes; do
+            echo "::group::${group}"
+            vendor/bin/pest --ci --fail-on-empty-test-suite --group="${group}" || failed=1
+            echo "::endgroup::"
+          done
+          exit "${failed}"

@@ -1,0 +1,49 @@
+{
+  "id": "job_01J8ZCA2R7F3H9NQ4KTX8VD5YB",
+  "state": "running",
+  "priority": "normal",
+  "node": "transcode-atl-04",
+  "idempotency_key": "video-941-v2",
+  "submitted_at": "2026-08-28T19:31:12.044Z",
+  "started_at": "2026-08-28T19:31:20.881Z",
+  "completed_at": null,
+  "attempts": 1,
+  "evictions": 0,
+  "progress": {
+    "percent": 41.7,
+    "stage": "encode",
+    "speed": 3.9,
+    "eta_seconds": 402
+  },
+  "source": {
+    "destination_ref": "tsp-media",
+    "key": "uploads/abc.mov",
+    "bytes": 8931245121
+  },
+  "outputs": [
+    {
+      "kind": "hls_ladder",
+      "generation": null,
+      "state": "pending"
+    },
+    {
+      "kind": "mp4",
+      "generation": null,
+      "state": "pending"
+    },
+    {
+      "kind": "thumbnails",
+      "generation": null,
+      "state": "pending"
+    },
+    {
+      "kind": "transcript",
+      "generation": null,
+      "state": "pending"
+    }
+  ],
+  "error": null,
+  "labels": {
+    "video_id": "941"
+  }
+}

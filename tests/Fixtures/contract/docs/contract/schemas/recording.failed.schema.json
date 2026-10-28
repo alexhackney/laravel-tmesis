@@ -1,0 +1,157 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/RecordingFailed",
+  "$defs": {
+    "RecordingFailed": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "recording.failed"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "The session this recording belongs to (one file, one session, as built). Correlate on recording_id."
+        },
+        "recording_id": {
+          "type": "string"
+        },
+        "artifact": {
+          "type": "string",
+          "enum": [
+            "ingest",
+            "master"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "description": "CLOSED set: which step failed. It drives routing, because a capture failure and an upload failure are different investigations. As built for the ingest artifact: capture is a file that never opened (disk floor, create failure, a part the ledger assigned to another writer), finalize is a row a dead process left whose file is gone at boot or a close whose ledger write was refused (the file is complete on disk and kept; nothing uploads or registers it), upload is a destination that failed permanently or past the retry budget with the file kept, register is a finalized file that cannot be read back.",
+          "enum": [
+            "capture",
+            "finalize",
+            "upload",
+            "register"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "One sentence. Free text, because the useful part is the underlying ffmpeg or S3 message."
+        },
+        "raw_parts_preserved": {
+          "type": "boolean",
+          "description": "true means the captured source parts are still on the node and a human can recover from them. false means there was nothing to preserve."
+        },
+        "parts": {
+          "type": "integer",
+          "description": "How many parts the artifact had when it failed. Always 1 as built: one row is one file (final plan 11.34 D4)."
+        },
+        "path": {
+          "description": "Where the preserved raw parts are, when raw_parts_preserved is true. null otherwise. The schema enforces the recovery invariant: a non-null path requires raw_parts_preserved true, and a null path requires raw_parts_preserved false (crossfield tag, pinned by TestRecordingFailedSchemaAcceptsTheDocumentedPayload).",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "recording_id",
+        "artifact",
+        "stage",
+        "reason",
+        "raw_parts_preserved",
+        "parts",
+        "path",
+        "labels"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "raw_parts_preserved": {
+                "const": true
+              }
+            },
+            "required": [
+              "raw_parts_preserved"
+            ]
+          },
+          "then": {
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "raw_parts_preserved": {
+                "const": false
+              }
+            },
+            "required": [
+              "raw_parts_preserved"
+            ]
+          },
+          "then": {
+            "properties": {
+              "path": {
+                "const": null
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

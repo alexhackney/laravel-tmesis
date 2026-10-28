@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/NodeDiskFloorNear",
+  "$defs": {
+    "NodeDiskFloorNear": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "node.disk_floor_near"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "data_dir": {
+          "type": "string"
+        },
+        "free_bytes": {
+          "type": "integer"
+        },
+        "total_bytes": {
+          "type": "integer",
+          "description": "The volume's whole size; free_bytes against it is how full the disk is. 0 only when the volume probe failed."
+        },
+        "floor_bytes": {
+          "type": "integer",
+          "description": "limits.disk_floor_gb in bytes."
+        },
+        "headroom_bytes": {
+          "type": "integer",
+          "description": "Free minus floor; negative once breached."
+        },
+        "margin_bytes": {
+          "type": "integer",
+          "description": "2 percent of the volume, 512 MiB to 20 GiB."
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "data_dir",
+        "free_bytes",
+        "total_bytes",
+        "floor_bytes",
+        "headroom_bytes",
+        "margin_bytes"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

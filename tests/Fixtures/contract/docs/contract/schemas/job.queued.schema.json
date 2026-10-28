@@ -1,0 +1,142 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/JobQueued",
+  "$defs": {
+    "JobQueued": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "job.queued"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "job": {
+          "type": "string"
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "queued"
+          ]
+        },
+        "priority": {
+          "type": "string",
+          "enum": [
+            "low",
+            "normal",
+            "high"
+          ]
+        },
+        "idempotency_key": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "outputs": {
+          "type": "array",
+          "description": "The requested output kinds, in the order submitted.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "source": {
+          "$ref": "#/$defs/JobSourceReport"
+        },
+        "attempts": {
+          "type": "integer",
+          "description": "Crashes, boot requeues and transient stage failures so far. Only this is judged against jobs.max_attempts."
+        },
+        "evictions": {
+          "type": "integer",
+          "description": "Live preemptions so far. They never fail a job."
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why it is queued NOW: submitted the first time, live_preempted (evicted, work dir kept), node_restarted (the boot sweep), transient_retry (a transient stage failure with attempts left), disk_insufficient (the box could not fit the job's disk reservation; no counter moves, and it is held back one rescan).",
+          "enum": [
+            "submitted",
+            "live_preempted",
+            "node_restarted",
+            "transient_retry",
+            "disk_insufficient"
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "job",
+        "state",
+        "priority",
+        "idempotency_key",
+        "outputs",
+        "source",
+        "attempts",
+        "evictions",
+        "reason",
+        "labels"
+      ],
+      "additionalProperties": false
+    },
+    "JobSourceReport": {
+      "type": "object",
+      "properties": {
+        "destination_ref": {
+          "type": "string",
+          "description": "The storage.destinations entry the source was read from, with key."
+        },
+        "key": {
+          "type": "string",
+          "description": "The source object's key in that destination."
+        },
+        "url": {
+          "type": "string",
+          "description": "The HTTPS source, with its query string (a presigned signature) removed."
+        },
+        "bytes": {
+          "type": "integer",
+          "description": "The source's size once the fetch learned it; absent while unknown."
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,365 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/StreamLive",
+  "$defs": {
+    "CaptionPlayback": {
+      "type": "object",
+      "properties": {
+        "playlist": {
+          "type": "string",
+          "description": "The caption playlist at the stream root: the DVR one while live (captions_en_dvr.m3u8 for en), the ended one once sealed (captions_en.m3u8, rewritten in place since v0.8.0; it was captions_en_vod.m3u8)."
+        },
+        "vtt": {
+          "description": "The WebVTT transcript sidecar under the language's captions directory (captions/en/transcript.vtt for en); null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "srt": {
+          "description": "The SRT transcript sidecar under the language's captions directory (captions/en/transcript.srt for en); null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "json": {
+          "description": "The JSON transcript sidecar under the language's captions directory (captions/en/transcript.json for en): one row per final cue with word timings, the feed a control plane indexes; null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "playlist",
+        "vtt",
+        "srt",
+        "json"
+      ],
+      "additionalProperties": false
+    },
+    "FirstSegment": {
+      "type": "object",
+      "properties": {
+        "media_sequence": {
+          "type": "integer"
+        },
+        "program_date_time": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "RFC3339 UTC, docs/API.md section 4"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration_seconds": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "media_sequence",
+        "program_date_time",
+        "duration_seconds"
+      ],
+      "additionalProperties": false
+    },
+    "LadderResolved": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/SourceSpec"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rungs": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ResolvedRung"
+          }
+        },
+        "notes": {
+          "type": "array",
+          "description": "one human sentence per rung dropped or capped, empty when the ladder ran as written",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "source",
+        "rungs",
+        "notes"
+      ],
+      "additionalProperties": false
+    },
+    "PreviewPlayback": {
+      "type": "object",
+      "properties": {
+        "whep_path": {
+          "type": "string"
+        },
+        "whep_url": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "whep_path",
+        "whep_url"
+      ],
+      "additionalProperties": false
+    },
+    "ResolvedRung": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        },
+        "fps": {
+          "type": "string",
+          "description": "rational string; empty on an audio rung"
+        },
+        "audio_only": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "name",
+        "width",
+        "height",
+        "fps",
+        "audio_only"
+      ],
+      "additionalProperties": false
+    },
+    "SourceSpec": {
+      "type": "object",
+      "properties": {
+        "codec": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "width": {
+          "type": "integer"
+        },
+        "height": {
+          "type": "integer"
+        },
+        "fps": {
+          "description": "the source rate snapped to the standard set, as a rational string (30000/1001)",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "audio_codec": {
+          "description": "the source's audio codec in ffprobe's spelling (aac, opus, mp3), none when the probe found no audio track, null when the source was not probed",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "bitrate_bps": {
+          "type": "number",
+          "description": "the ingest window rate at the time of the event"
+        },
+        "probed_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, docs/API.md section 4"
+        },
+        "probe_ms": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "codec",
+        "width",
+        "height",
+        "fps",
+        "audio_codec",
+        "bitrate_bps",
+        "probed_at",
+        "probe_ms"
+      ],
+      "additionalProperties": false
+    },
+    "StreamLive": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "stream.live"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string"
+        },
+        "epoch": {
+          "type": "integer"
+        },
+        "delivery_mode": {
+          "type": "string",
+          "enum": [
+            "bucket",
+            "origin",
+            "both"
+          ]
+        },
+        "playback": {
+          "$ref": "#/$defs/StreamPlayback"
+        },
+        "first_segment": {
+          "$ref": "#/$defs/FirstSegment"
+        },
+        "ladder": {
+          "type": "string"
+        },
+        "ladder_resolved": {
+          "$ref": "#/$defs/LadderResolved"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "delivery_mode",
+        "playback",
+        "first_segment",
+        "ladder",
+        "ladder_resolved",
+        "labels"
+      ],
+      "additionalProperties": false
+    },
+    "StreamPlayback": {
+      "type": "object",
+      "properties": {
+        "master": {
+          "type": "string"
+        },
+        "renditions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "preview": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PreviewPlayback"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "captions": {
+          "description": "One entry per caption language, keyed by RFC 5646 tag; null when the session has no caption rendition. On stream.live the playlist is the language's DVR caption playlist (captions_en_dvr.m3u8 for en) and vtt, srt and json are null; on stream.sealed the playlist is the ended one, captions_en.m3u8 rewritten in place at the final seal (since v0.8.0; it was captions_en_vod.m3u8), and the three are the transcript sidecars.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/CaptionPlayback"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "master",
+        "renditions",
+        "preview",
+        "captions"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

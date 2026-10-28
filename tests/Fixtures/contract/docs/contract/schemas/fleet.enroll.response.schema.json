@@ -1,0 +1,246 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/EnrollResponse",
+  "$defs": {
+    "DesiredJobsPause": {
+      "type": "object",
+      "properties": {
+        "until": {
+          "description": "RFC 3339 UTC: when the pause ends by itself. null: until the control plane clears it. A time already past is accepted and simply inactive. Required key.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "Why, 1 to 200 bytes, shown verbatim in health, doctor, the heartbeat and the jobs.paused webhook (for example show: fight night 12)."
+        }
+      },
+      "required": [
+        "until",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "DesiredRecording": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "retention_hours": {
+          "type": "integer",
+          "description": "Counted from REGISTRATION, not from finalize. An unregistered artifact is never swept (final plan 11.17).",
+          "minimum": 1
+        },
+        "destination": {
+          "description": "An absolute directory, or null for the node default. Never set together with destination_ref.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "destination_ref": {
+          "description": "A storage.destinations name, or null for the node default. Never set together with destination.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "enabled",
+        "retention_hours",
+        "destination",
+        "destination_ref"
+      ],
+      "additionalProperties": false
+    },
+    "DesiredRelay": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "description": "srt://, rtmp://, or rtmps://. Those three schemes are the whole set."
+        },
+        "enabled": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "enabled"
+      ],
+      "additionalProperties": false
+    },
+    "DesiredState": {
+      "type": "object",
+      "properties": {
+        "revision": {
+          "type": "integer",
+          "description": "Monotonic, 1 or above (0 is the node's 'nothing applied'). The node applies one revision transactionally and reports it back in desired_revision_applied.",
+          "minimum": 1
+        },
+        "streams": {
+          "type": "array",
+          "description": "FULL replacement for the fleet-owned stream set. Empty means the fleet owns no streams here; it does not mean unchanged.",
+          "items": {
+            "$ref": "#/$defs/DesiredStream"
+          }
+        },
+        "revocations": {
+          "type": "array",
+          "description": "FULL replacement for the revocation list. Required array: always serialises as [] (empty array), never null. A partial revocation list is worse than none, so the fleet sends [] to clear it.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "open_posture": {
+          "type": "boolean",
+          "description": "Whether this node accepts a validly signed key for a stream it has never seen."
+        },
+        "jobs_pause": {
+          "description": "The told jobs pause: the node claims no new transcode job until it ends, running jobs finish, queued jobs wait. FULL replacement: null or absent clears a pause the fleet set (and an API pause the box held when it joined). Optional: a control plane that predates it sends none, which reads as no fleet pause. The pause belongs to this enrollment and ends with it.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/DesiredJobsPause"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "revision",
+        "streams",
+        "revocations",
+        "open_posture"
+      ],
+      "additionalProperties": false
+    },
+    "DesiredStream": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "min_key_epoch": {
+          "type": "integer",
+          "description": "Reject keys below this epoch. It applies to the next handshake and never disconnects an attached publisher.",
+          "minimum": 0
+        },
+        "labels": {
+          "type": "object",
+          "description": "Opaque, echoed in every webhook for this stream. The node never interprets them.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "recording": {
+          "$ref": "#/$defs/DesiredRecording"
+        },
+        "relays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/DesiredRelay"
+          }
+        },
+        "lease": {
+          "description": "The told grant of this stream's live output prefix, or null when the fleet does not manage it. Optional: absent is null, so a control plane that predates it changes nothing.",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/StreamLease"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "min_key_epoch",
+        "labels",
+        "recording",
+        "relays"
+      ],
+      "additionalProperties": false
+    },
+    "EnrollResponse": {
+      "type": "object",
+      "properties": {
+        "heartbeat_url": {
+          "type": "string",
+          "description": "The FULL heartbeat endpoint. The node never appends to it and never follows a redirect away from it."
+        },
+        "node_id": {
+          "type": "string",
+          "description": "Durable identity, assigned by the control plane and stable across reinstalls."
+        },
+        "node_name": {
+          "type": "string",
+          "description": "The name the fleet knows this box by. It may differ from the requested name; the node adopts this one."
+        },
+        "fleet_token": {
+          "type": "string",
+          "description": "The long-term bearer token. The node keeps it inside /etc/tmesis/fleet.json (mode 0640, root:tmesis) beside the enrollment it belongs to, so identity and credential are written by one atomic rename (D11). It is never written into config.yml or .env."
+        },
+        "desired_state": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/DesiredState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "heartbeat_url",
+        "node_id",
+        "node_name",
+        "fleet_token",
+        "desired_state"
+      ],
+      "additionalProperties": false
+    },
+    "StreamLease": {
+      "type": "object",
+      "properties": {
+        "epoch": {
+          "type": "integer",
+          "description": "The fencing epoch the control plane granted, 1 or above. Its own domain, never the node's local lease epoch.",
+          "minimum": 1
+        },
+        "holder": {
+          "type": "string",
+          "description": "The fleet node id (enroll response node_id) that holds the prefix at this epoch. Any other node writes nothing to the prefix."
+        }
+      },
+      "required": [
+        "epoch",
+        "holder"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

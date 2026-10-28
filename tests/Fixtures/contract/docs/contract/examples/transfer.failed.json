@@ -1,0 +1,24 @@
+{
+  "event": "transfer.failed",
+  "delivery": "01J8ZCKFT4N2QWX6VM3RKB9PD8",
+  "occurred_at": "2026-08-28T22:04:02.005Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "session_epoch": 3,
+  "job_id": null,
+  "generation": "01J8ZCK5R7V2QNX8RW4TKB6PD2",
+  "kind": "hls_sealed",
+  "inventory_sha256": "9f2c1d5e6a7b8c9d0e1f2a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f",
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  },
+  "plan_revision": 2,
+  "target_id": "01J8ZCK8T4N2QWX6VM3RKB9PD8",
+  "object_id": "01J8ZCK9T4N2QWX6VM3RKB9PD8",
+  "code": "attempts_exhausted",
+  "message": "The transfer reported attempts_exhausted"
+}

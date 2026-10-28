@@ -1,0 +1,18 @@
+{
+  "id": "show-2041-main",
+  "version": 5,
+  "applied": {
+    "labels": "live",
+    "webhook_url": "live"
+  },
+  "pending": {
+    "segment_seconds": {
+      "when": "next_session",
+      "current": 6,
+      "requested": 4,
+      "reason": "keyframe cadence is forced from it, so it needs a new encoder session, and EXT-X-TARGETDURATION can only be grown safely, never shrunk mid-manifest"
+    }
+  },
+  "unchanged": ["ladder"],
+  "audit_id": "01J8ZCE9M3K7QW2XVR5NB8TDH4"
+}

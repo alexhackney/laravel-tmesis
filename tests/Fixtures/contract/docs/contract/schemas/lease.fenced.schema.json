@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/LeaseFenced",
+  "$defs": {
+    "LeaseFenced": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "lease.fenced"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "The publish session whose bucket output was fenced. Empty for a crash-recovery seal, which belongs to no running session."
+        },
+        "prefix": {
+          "type": "string",
+          "description": "The stream's object key root under the live destination, e.g. live/show-2041-main: the unit a single writer owns."
+        },
+        "cause": {
+          "type": "string",
+          "description": "CLOSED set. superseded is a higher fencing epoch, the normal takeover; released, holder_changed and missing mean the grant disappeared with no higher epoch, and are always an incident.",
+          "enum": [
+            "superseded",
+            "released",
+            "holder_changed",
+            "missing"
+          ]
+        },
+        "held_epoch": {
+          "type": "integer",
+          "description": "The FENCING epoch this node wrote under. Not the session epoch and not the key epoch."
+        },
+        "observed_epoch": {
+          "type": "integer",
+          "description": "The highest fencing epoch on record for this prefix when the fence was detected. Higher than held_epoch when cause is superseded, equal to it otherwise."
+        },
+        "new_holder": {
+          "description": "The holder of the grant of record, or null when the prefix is released or unheld. On one box this is usually this node's own name: a takeover fences its own predecessor.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "writes_stopped_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when this node stopped writing the prefix. Before occurred_at: the node stops first and tells afterwards. Up to the live destination's upload_concurrency objects already in flight may still land after it; closing that needs conditional writes, which arrive with FLEET."
+        },
+        "abandoned_uploads": {
+          "type": "integer",
+          "description": "Objects this grant still owed when it stopped. They stay in the node's ledger at held_epoch and are reconciled by the next holder or the next start: segments are uploaded, playlists and init segments are retired, never uploaded over the current holder's."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "prefix",
+        "cause",
+        "held_epoch",
+        "observed_epoch",
+        "new_holder",
+        "writes_stopped_at",
+        "abandoned_uploads",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

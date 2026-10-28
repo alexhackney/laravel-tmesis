@@ -1,0 +1,6 @@
+{
+  "id": "show-2041-main",
+  "state": "draining",
+  "grace_seconds": 10,
+  "seal": true
+}

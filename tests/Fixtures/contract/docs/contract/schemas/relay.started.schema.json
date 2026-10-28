@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/RelayEvent",
+  "$defs": {
+    "RelayDestination": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "url": {
+          "type": "string",
+          "description": "REDACTED. A destination url is a credential and never travels unmasked."
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "connecting",
+            "connected",
+            "degraded",
+            "failed",
+            "stopped"
+          ]
+        },
+        "bytes_out": {
+          "type": "integer"
+        },
+        "dropped_bytes": {
+          "type": "integer"
+        },
+        "reconnects": {
+          "type": "integer"
+        },
+        "feed": {
+          "type": "string",
+          "description": "What this destination is sent in this session: ingest (the publisher's bytes) or rung:\u003cname\u003e (a ladder rung). Empty when it was refused before resolving, or stopped while waiting on the session's source."
+        },
+        "aliases": {
+          "type": "array",
+          "description": "OPTIONAL. Provisioned destination ids folded into this leg because they named the same URL and feed as a static relay; omitted when there are none (docs/WEBHOOKS.md 8.27).",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "url",
+        "state",
+        "bytes_out",
+        "dropped_bytes",
+        "reconnects",
+        "feed"
+      ],
+      "additionalProperties": false
+    },
+    "RelayEvent": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "relay.started"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "destination": {
+          "$ref": "#/$defs/RelayDestination"
+        },
+        "reason": {
+          "type": "string"
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "destination",
+        "reason",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/NodeDraining",
+  "$defs": {
+    "NodeDraining": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "node.draining"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "reason": {
+          "type": "string",
+          "description": "fleet is an in-place drain by fleet command: admission closes and the process STAYS UP (no exit follows); every other reason ends in process exit.",
+          "enum": [
+            "sigterm",
+            "api",
+            "deploy",
+            "fleet"
+          ]
+        },
+        "grace_seconds": {
+          "type": "integer"
+        },
+        "active_streams": {
+          "type": "integer"
+        },
+        "active_jobs": {
+          "type": "integer"
+        },
+        "outbox_depth": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "reason",
+        "grace_seconds",
+        "active_streams",
+        "active_jobs",
+        "outbox_depth"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

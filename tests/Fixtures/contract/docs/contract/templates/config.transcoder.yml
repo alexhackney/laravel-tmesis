@@ -1,0 +1,65 @@
+# /etc/tmesis/config.yml on a transcoder: a box that runs VOD transcode jobs and has no
+# live publisher pointed at it.
+#
+# `install.sh --role transcoder` seeds this file on a fresh box, and it is the MINIMAL
+# file for the role: every key not written here takes its default. A transcoder opens no
+# ingest port at all (internal/node roleIngests), so there is no ingest stanza and no
+# publish key to mint. Read /opt/tmesis/current/config.example.yml for every key, and
+# docs/CONFIG.md for what each one costs to change.
+#
+# THIS FILE IS ALSO A CONTRACT ARTIFACT (docs/contract/templates/, docs/DEPLOY.md 5.6,
+# the non-interactive bootstrap). Every setting in it is a PLAIN VALUE (v0.8.0, decision
+# D9): a control plane renders it by writing values at their keys, and a hand install
+# edits the same lines. The only braced names are the secrets TMESIS_ADMIN_TOKEN and
+# TMESIS_WEBHOOK_SECRET, read from /etc/tmesis/.env (0600, root), which the installer
+# writes on a fresh box; a render leaves them as they are.
+
+node:
+  # name defaults to the hostname when empty. A rendered file carries the name the
+  # control plane stores for this box.
+  name: ""
+  role: transcoder
+
+encode:
+  # The pinned engine the installer puts in every release. install.sh writes the
+  # engine it resolved on this box here.
+  ffmpeg: /opt/tmesis/current/ffmpeg
+  default_ladder: production
+  ladders:
+    # The shipped broadcast ladder, a verbatim copy of the `production` stanza in
+    # config.example.yml. TestRoleTemplatesCarryTheShippedProductionLadder holds the
+    # two equal, so a change to the shipped ladder moves this copy in the same edit.
+    production:
+      segment_seconds: 6
+      rungs:
+        - { name: 1080p, width: 1920, height: 1080, fps: "60000/1001", v_kbps: 6000, preset: faster, profile: main }
+        - { name: 720p, width: 1280, height: 720, fps: "60000/1001", v_kbps: 3500, preset: veryfast, profile: main }
+        - { name: 540p, width: 960, height: 540, fps: "30000/1001", v_kbps: 1850, preset: veryfast, profile: main }
+        - { name: 360p, width: 640, height: 360, fps: "30000/1001", v_kbps: 1050, preset: veryfast, profile: main }
+        - { name: 240p, width: 426, height: 240, fps: "30000/1001", v_kbps: 650, preset: veryfast, profile: main }
+        # The cellular tier. Its own audio group is what lets it fit under 192 kb/s.
+        - { name: 240p-low, width: 426, height: 240, fps: "30000/1001", v_kbps: 96, preset: veryfast, profile: main, audio_group: low }
+        # The ordinary audio programme, shared by the five rungs above. It is also the
+        # transcription SIDE-FEED: its media playlist has a stable URL and is fetched
+        # directly rather than through the master (docs/API.md, the delivery surface).
+        - { name: audio, audio_only: true }
+        # The low tier's own quieter programme. A separate GROUP, not a second member
+        # of the one above: one group is one programme, and two members would be a
+        # choice a player makes rather than two tiers.
+        - { name: audio-low, audio_only: true, a_kbps: 64, audio_group: low }
+      audio: { codec: aac, rate: 48000, a_kbps: 128, language: en, normalize: true }
+
+# Webhooks are OFF while the url is empty, the shipped value.
+webhooks: { url: "", secret: "${TMESIS_WEBHOOK_SECRET}" }
+
+# The admin API, the transcoder's only surface. Loopback as shipped; a rendered file
+# carries the address the control plane dials and, with it, TLS: tls.domain on a box
+# with a public name and 80 and 443 open, else the cert_file and key_file pair. All
+# three empty is plain HTTP. Never both ways (docs/DEPLOY.md section 7).
+api:
+  listen: "127.0.0.1:7000"
+  admin_token: ${TMESIS_ADMIN_TOKEN}
+  tls:
+    domain: ""
+    cert_file: ""
+    key_file: ""

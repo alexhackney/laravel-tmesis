@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/JobsResumed",
+  "$defs": {
+    "JobsResumed": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "jobs.resumed"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "cause": {
+          "type": "string",
+          "description": "expired: until passed. cleared: DELETE, or a desired-state revision without jobs_pause. released: the fleet pause ended with its enrollment (leave, or a boot under another enrollment).",
+          "enum": [
+            "expired",
+            "cleared",
+            "released"
+          ]
+        },
+        "source": {
+          "type": "string",
+          "description": "Who set the pause that ended.",
+          "enum": [
+            "fleet",
+            "api"
+          ]
+        },
+        "paused_at": {
+          "type": "string",
+          "description": "When the ended pause started taking effect (its jobs.paused set_at)."
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "cause",
+        "source",
+        "paused_at"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "event": "jobs.paused",
+  "delivery": "01J8Z9P4R6K2NWX7VM5TQB3HD8",
+  "occurred_at": "2026-08-28T12:00:00.412Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "until": "2026-08-28T19:00:00Z",
+  "reason": "show: fight night 12",
+  "source": "fleet",
+  "set_at": "2026-08-28T12:00:00.409Z"
+}

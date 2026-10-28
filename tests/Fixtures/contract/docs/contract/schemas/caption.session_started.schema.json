@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/CaptionSessionStarted",
+  "$defs": {
+    "CaptionSessionStarted": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "caption.session_started"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "The publish session this caption session belongs to. This event fires once per caption session: the first open, a resume after a degrade (resumed_after), a provider switch (switched_from) and the first open after a rejoin each fire it again with the SAME session; a reconnect, a rotation or a re-anchor does not (since v0.9.3; caption.session_ended counts them in sockets, reconnects and rotations). Since v0.9.4 every caption.session_ended has a start: a caption session that ends before its start went out (refused at its first open on either provider, held before its first start, a resume or a switch held or sealed inside its wait for its id, sealed while held, torn down before any session opened, or switched away from before it ever opened) fires this event just before its end, with provider_request_id null."
+        },
+        "epoch": {
+          "type": "integer",
+          "description": "The SESSION epoch, as on every stream event."
+        },
+        "lang": {
+          "type": "string",
+          "description": "The RFC 5646 tag this session captions in; one event per language."
+        },
+        "provider": {
+          "type": "string",
+          "description": "The STT provider: deepgram or self_hosted."
+        },
+        "provider_request_id": {
+          "description": "The provider's own id for the caption session's first socket, for a support ticket; later sockets' ids are on the stream's timeline (caption.socket_opened rows). null when Deepgram had not reported one within the node's grace after the open (it sends it in Metadata, after the open), and, since v0.9.4, on the start sent just before the end of a caption session that ended before its start went out (refused at its first open on either provider, held before its first start, a resume or a switch held or sealed inside its wait for its id, sealed while held, torn down before any session opened, or switched away from before it ever opened). A self_hosted session otherwise opens on the sidecar's first answer and carries its id.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "resumed_after": {
+          "description": "The caption.session_ended reason of the degrade this start resumes from, when the provider answered again and captions came back by themselves; null on every other start (the first open, a provider switch that was not a resume, the first open after a rejoin), and on a start on the other provider after an auth_error or quota_exceeded, which carries switched_from only. stalled (since v0.9.3) is a resume after a stall, which waits at least 15 s after the stall even when the provider answers its readiness check at once.",
+          "oneOf": [
+            {
+              "type": "string",
+              "enum": [
+                "gave_up",
+                "rate_limited",
+                "provider_closed",
+                "unreachable",
+                "stalled"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "switched_from": {
+          "description": "The provider this stream's captions just left, on a failover to transcription.fallback_provider or a failback to the primary, and on a start on the fallback because the primary was unavailable when captions started (a publish, captions turned on, a language change) or, since v0.9.3, because the box's captioned capacity was full (the self-hosted sidecar's measured count less one, health live_capacity.caption_sessions_total), and, since v0.9.4, on the first open after a rejoin while the stream is on the fallback, which names the primary; null on every other start. Since v0.9.2.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "fallback": {
+          "type": "boolean",
+          "description": "True while this session runs on transcription.fallback_provider, false on the primary. Since v0.9.2."
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "lang",
+        "provider",
+        "provider_request_id",
+        "resumed_after",
+        "switched_from",
+        "fallback",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

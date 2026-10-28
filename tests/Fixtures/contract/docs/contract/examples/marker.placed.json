@@ -1,0 +1,42 @@
+{
+  "event": "marker.placed",
+  "delivery": "01J8ZD3M5Q7R9TV2WX4YB6NC8K",
+  "occurred_at": "2026-08-28T19:26:54.212Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "stream": "show-2041-main",
+  "session": "01J8ZC8XKWQ4M7T0K3PZ2B9RVN",
+  "epoch": 3,
+  "marker": "break-2041-3",
+  "kind": "out",
+  "class": "com.hackney.tmesis.scte35",
+  "duration_seconds": 30,
+  "scte35": null,
+  "start_date": "2026-08-28T19:26:54.006Z",
+  "complete": true,
+  "placements": [
+    {
+      "rendition": "480p",
+      "segment_index": 143,
+      "media_sequence": 143,
+      "program_date_time": "2026-08-28T19:26:48Z"
+    },
+    {
+      "rendition": "720p",
+      "segment_index": 143,
+      "media_sequence": 143,
+      "program_date_time": "2026-08-28T19:26:48Z"
+    },
+    {
+      "rendition": "audio",
+      "segment_index": 143,
+      "media_sequence": 143,
+      "program_date_time": "2026-08-28T19:26:47.994Z"
+    }
+  ],
+  "labels": {
+    "show_id": "2041",
+    "site": "csn"
+  }
+}

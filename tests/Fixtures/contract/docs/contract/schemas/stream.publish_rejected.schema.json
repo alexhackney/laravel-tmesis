@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/StreamPublishRejected",
+  "$defs": {
+    "StreamPublishRejected": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "stream.publish_rejected"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "description": "The stream id parsed out of the key. null when the key was too malformed to parse one.",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "description": "CLOSED set: every reason this event can carry, which is what both ingest listeners refuse a publish with. It is NOT the tmesis_publish_rejected_total label set: internal, panic and encrypted are counted there and never emitted here. closed is a node draining in place (admission closed). encoder_unavailable is a node whose pinned live encoder (encode.video_encoder) failed at boot: SRT 1503, RTMP Publish failed. over_capacity is a node whose stored live capacity, told limits.max_streams, or NVENC/QSV device session ceiling has no room for this publish: SRT 1402, RTMP Publish failed. over_capacity and encoder_unavailable are never rate-limited for a locally proven key (signed, or a configured bare key): every such refusal is a delivery and a timeline row. An unproven token's refusal under the OPEN posture, and every other reason, stays under publish_rejected_per_minute and the node-wide ceiling.",
+          "enum": [
+            "malformed",
+            "bad_signature",
+            "bad_app",
+            "epoch_expired",
+            "revoked",
+            "unknown_stream",
+            "no_key",
+            "bad_mode",
+            "unauthorized",
+            "hook_denied",
+            "already_publishing",
+            "closed",
+            "encoder_unavailable",
+            "over_capacity"
+          ]
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "srt",
+            "rtmp",
+            "rtmps"
+          ]
+        },
+        "key_fragment": {
+          "type": "string",
+          "description": "Redacted: the stream id and epoch in full, then the first four and last four hex characters of the MAC with three dots between."
+        },
+        "remote": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "reason",
+        "protocol",
+        "key_fragment",
+        "remote"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

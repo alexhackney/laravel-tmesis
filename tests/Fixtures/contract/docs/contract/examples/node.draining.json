@@ -1,0 +1,13 @@
+{
+  "event": "node.draining",
+  "delivery": "01J8ZCW8T4N2QWX7KR5MVB3PD6",
+  "occurred_at": "2026-08-29T02:00:11.74Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "reason": "sigterm",
+  "grace_seconds": 120,
+  "active_streams": 1,
+  "active_jobs": 0,
+  "outbox_depth": 4
+}

@@ -1,0 +1,162 @@
+# /etc/tmesis/config.yml on a low-spec venue edge.
+#
+# The whole P2 story: flash Ubuntu, run the installer, drop this file, done. That box now
+# ingests, relays to the origin it is TOLD, and tells tsp-web what happened. No GPU, no
+# packager, no bucket, no control plane. Simple mode is not a degraded mode: a box like
+# this needs nothing else for years.
+#
+# WHAT THIS TEMPLATE DOES: a feed comes in, it is recorded locally byte for byte as it
+# arrives (the SRT payload as MPEG-TS, an RTMP stream as FLV), and it is relayed to the
+# told destinations. The recording stanza below is live: the ingest copy lands under
+# <data_dir>/artifacts/<generation>/, is finalized when the session ends, and is
+# registered. Nothing is swept on retention alone: the local copy is retired only after
+# an explicit release (tmesis artifacts release, or the platform's release call) and
+# retention_hours past registration. Give it a destination and the finalized file is
+# copied there before it registers.
+#
+# INSTALL, PASTE A DESTINATION, PUBLISH. That is the whole setup, and the two lines that
+# make it true are the OPEN key posture and the relays stanza below. Both are deliberate
+# and both are explained where they sit.
+#
+# `install.sh --role edge` seeds this file as /etc/tmesis/config.yml on a fresh box.
+# Two edits before the first publish: the relay destination below (it ships as a
+# placeholder that never resolves), and webhooks.url if this edge should report to a
+# control plane.
+#
+# THIS FILE IS ALSO A CONTRACT ARTIFACT (docs/contract/templates/, docs/DEPLOY.md 5.6,
+# the non-interactive bootstrap). Every setting in it is a PLAIN VALUE (v0.8.0, decision
+# D9): a control plane renders it by writing values at their keys, and a hand install
+# edits the same lines. The only braced names are the box's SECRETS,
+# TMESIS_STREAM_KEY_SECRET, TMESIS_ADMIN_TOKEN, TMESIS_WEBHOOK_SECRET and
+# TMESIS_HOOK_SECRET, read from /etc/tmesis/.env (0600, root) and left as they are by a
+# render. Reference: docs/CONFIG.md.
+
+# name defaults to the hostname when empty, which is what a hand-installed box gets: a
+# name written here would be the same name on every edge in the fleet. A rendered file
+# carries the name the control plane stores for this box.
+node: { name: "", role: edge }
+ingest:
+  srt:  { listen: ":6001" }
+  rtmp: { listen: ":1935" }
+  keys:
+    verify_secrets: [ { kid: "2026-08", secret: "${TMESIS_STREAM_KEY_SECRET}" } ]
+
+    # OPEN KEY POSTURE. This node accepts ANY stream token, minted or not.
+    #
+    # Anyone who can reach the ingest port can publish. Turn this on ONLY behind a
+    # verify hook (ingest.verify_hook) or where the control plane is watching
+    # stream.published and will kick what it does not recognise. It exists as
+    # migration insurance: production Nimble accepts anything on its src app and
+    # gates through PublishURL, and running both paths until Tmesis is verified is
+    # worth more than a clean key story on day one.
+    open: true
+
+  # The synchronous publish hook (docs/CONFIG.md 6.2): OFF while the url is empty, which
+  # is the shipped value and a rendered file's value until the control plane's hook
+  # endpoint answers (decision #141 A). The shipped node denies every unproven key on
+  # a hook outage, so turning it on before the endpoint is live refuses every publish.
+  # It turns on by writing the url. The secret comes from /etc/tmesis/.env; a secret
+  # with no url is still OFF. timeout_ms and on_timeout are left at their defaults,
+  # 500 ms and allow.
+  verify_hook: { url: "", secret: "${TMESIS_HOOK_SECRET:-}" }
+
+# The told forward destination. This ONE line is most of what makes a low-spec edge
+# useful, and it is what "the edge works out of the box" means in practice.
+#
+# WHAT IT DOES: a COPY of exactly what the publisher sent, pre-ladder, forwarded to
+# this destination for the whole of every publish. stream "*" is every stream on this
+# box; an exact stream id is the only other matcher, because a pattern language in a
+# config file is derivation wearing a costume.
+#
+# WHAT IT CANNOT DO: hurt the show. A slow or dead destination drops and counts on its
+# own bounded ring, and can never backpressure the publisher or touch another
+# destination (test/chaos/smoke-relay.sh asserts exactly that, including across a
+# destination being killed mid-show).
+#
+# THE URL IS A CREDENTIAL. A push destination routinely carries the destination's own
+# stream key, so this file is 0600 and the node redacts these URLs down to scheme,
+# host, and port in every log line and every API response.
+#
+# The publisher's ORIGINAL token is presented to the destination unchanged, so the far
+# end makes its own authorization decision: an OPEN edge does not become an OPEN
+# origin. A destination URL that embeds its own credentials uses those instead.
+#
+# PASTE YOUR ORIGIN HERE. The leg is rtmp:// to the origin's `src` app, the shape the
+# public edge relays to Nimble with (decision #128); srt:// is also accepted. The host
+# below is a placeholder under .invalid, a name that never resolves (RFC 6761), so a box
+# seeded from this file loads, accepts publishes and retries this destination until the
+# line is edited: it can never forward a show to a stranger by accident. A rendered file
+# writes its own destination here (the static leg to Nimble in the TSP cutover).
+relays:
+  - { stream: "*", url: "rtmp://paste-your-origin-here.invalid/src", mode: copy }
+
+encode:
+  # The engine the relay's remux runs (rtmp:// always, srt:// from an rtmp publish,
+  # any rung feed). Absolute, because the supervisor spawns only absolute paths. The
+  # node also prefers this pinned build when encode.ffmpeg is left at "ffmpeg" (EDGE-11).
+  # install.sh --role edge writes the engine it resolved on this box here, exactly as it
+  # does for the standalone config.
+  ffmpeg: /opt/tmesis/current/ffmpeg
+
+# Webhooks are optional, and OFF while the url is empty, which is the shipped value. Set
+# the url to report stream events to a control plane; without it `tmesis doctor` says
+# "not configured, this node reports to nobody", which is the truth rather than a fault.
+# The secret, from .env, signs every delivery.
+webhooks: { url: "", secret: "${TMESIS_WEBHOOK_SECRET}" }
+
+# The admin API, loopback by default. The token is the only credential for it and comes
+# from /etc/tmesis/.env, which the installer writes on a fresh box.
+#
+# TLS PER BOX, ONE RULE (docs/DEPLOY.md section 7): a box with a public name and 80 and
+# 443 open sets tls.domain and the node obtains and renews its own certificate; a box
+# that cannot answer the challenge is handed the file pair instead (cert_file and
+# key_file, /etc/tmesis/api.crt and /etc/tmesis/api.key from the bootstrap). All three
+# empty is plain HTTP. Never both ways: validation refuses a domain beside a pair.
+api:
+  listen: "127.0.0.1:7000"
+  admin_token: ${TMESIS_ADMIN_TOKEN}
+  tls:
+    domain: ""
+    cert_file: ""
+    key_file: ""
+
+# The ingest recording (docs/CONFIG.md 6.6): the edge's own insurance copy, the
+# publisher's original bytes, on by default for this role. retention_hours is the
+# EARLIEST a registered file may be retired, and only after an explicit release: nothing
+# is deleted on retention alone, and an unregistered file is never deleted. destination
+# is where the finalized file goes: empty keeps it local, an absolute path copies it
+# there. For a bucket, set destination_ref to a storage.destinations name instead (never
+# both, docs/CONFIG.md 6.6 and 6.16); the object key is then told by an artifact plan,
+# and the file is held on the box until one exists. Never derived.
+#
+# `dvr: { capture, retention_hours }` is an ALIAS of the two keys below (final plan
+# 11.17), kept for operators who already type it; give the setting once.
+recording:
+  ingest: { enabled: true, retention_hours: 72, destination: "" }
+
+# Everything else takes its default: no ladder (an edge never encodes), origin delivery on
+# :8080 for the local status page, 5GB disk floor.
+# The firewall is docs/DEPLOY.md's per-role list: 22, 80 and 443/tcp, 1935/tcp, 6001/udp.
+#
+# No ladder does NOT mean nothing is forwarded. A box with no encode.default_ladder
+# counts the publisher's media and discards it LOCALLY, and the relay above still
+# receives every byte: that is the passthrough edge, and it is the shape this template
+# ships in.
+#
+# More destinations can be added to a running box over the API without editing this
+# file (POST /api/v1/streams/:id/relays), and they survive a reboot. The ones written
+# here cannot be deleted that way, on purpose: this process reads this file and can
+# never write it, so a delete that appeared to work would come back at the next publish.
+#
+# The ingest recording above is the edge's own insurance copy: this box holds the
+# publisher's original bytes and losing them is unrecoverable. Disk: about 2.7 GB per
+# hour at 6 Mbps, and every recording STAYS until it is released, so an edge nobody
+# releases only grows. Release in bulk with
+#   tmesis artifacts release --stream <stream> --before <time> --reason "..."
+# and watch `tmesis doctor`'s "release backlog" row, which counts what waits and the
+# disk it holds. The box sheds the recording first (never the feed) when
+# limits.disk_floor_gb is reached (docs/DEPLOY.md).
+#
+# The told master (docs/CONFIG.md 6.6) is on with the ingest copy: when a producer
+# drops and rejoins, the control plane names the parts and the edge joins them into one
+# MP4 at the key it tells. Set recording.master.enabled: false to refuse those requests.

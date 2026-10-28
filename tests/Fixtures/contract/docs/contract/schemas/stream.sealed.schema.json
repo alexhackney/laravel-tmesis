@@ -1,0 +1,234 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/StreamSealed",
+  "$defs": {
+    "CaptionPlayback": {
+      "type": "object",
+      "properties": {
+        "playlist": {
+          "type": "string",
+          "description": "The caption playlist at the stream root: the DVR one while live (captions_en_dvr.m3u8 for en), the ended one once sealed (captions_en.m3u8, rewritten in place since v0.8.0; it was captions_en_vod.m3u8)."
+        },
+        "vtt": {
+          "description": "The WebVTT transcript sidecar under the language's captions directory (captions/en/transcript.vtt for en); null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "srt": {
+          "description": "The SRT transcript sidecar under the language's captions directory (captions/en/transcript.srt for en); null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "json": {
+          "description": "The JSON transcript sidecar under the language's captions directory (captions/en/transcript.json for en): one row per final cue with word timings, the feed a control plane indexes; null while live",
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "playlist",
+        "vtt",
+        "srt",
+        "json"
+      ],
+      "additionalProperties": false
+    },
+    "PreviewPlayback": {
+      "type": "object",
+      "properties": {
+        "whep_path": {
+          "type": "string"
+        },
+        "whep_url": {
+          "oneOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "whep_path",
+        "whep_url"
+      ],
+      "additionalProperties": false
+    },
+    "StreamPlayback": {
+      "type": "object",
+      "properties": {
+        "master": {
+          "type": "string"
+        },
+        "renditions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "preview": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/PreviewPlayback"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "captions": {
+          "description": "One entry per caption language, keyed by RFC 5646 tag; null when the session has no caption rendition. On stream.live the playlist is the language's DVR caption playlist (captions_en_dvr.m3u8 for en) and vtt, srt and json are null; on stream.sealed the playlist is the ended one, captions_en.m3u8 rewritten in place at the final seal (since v0.8.0; it was captions_en_vod.m3u8), and the three are the transcript sidecars.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/CaptionPlayback"
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "master",
+        "renditions",
+        "preview",
+        "captions"
+      ],
+      "additionalProperties": false
+    },
+    "StreamSealed": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "stream.sealed"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "delivery_mode": {
+          "type": "string",
+          "enum": [
+            "bucket",
+            "origin",
+            "both"
+          ]
+        },
+        "vod": {
+          "$ref": "#/$defs/StreamPlayback"
+        },
+        "duration_seconds": {
+          "type": "number"
+        },
+        "segment_count": {
+          "type": "integer"
+        },
+        "discontinuity_count": {
+          "type": "integer"
+        },
+        "dropped_segments": {
+          "type": "integer"
+        },
+        "sessions": {
+          "type": "integer",
+          "description": "How many publisher sessions the sealed replay covers"
+        },
+        "first_program_date_time": {
+          "oneOf": [
+            {
+              "type": "string",
+              "description": "RFC3339 UTC, docs/API.md section 4"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "sealed_by": {
+          "type": "string",
+          "description": "Who asked for the seal. crash_recovered (since v0.8.0) is the seal of a window a crashed process left on disk, whether its grace ran out, a DELETE ended it, or a sealing drain did.",
+          "enum": [
+            "api_delete",
+            "publisher_stop",
+            "node_drain",
+            "fallback_end",
+            "crash_recovered"
+          ]
+        },
+        "labels": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "delivery_mode",
+        "vod",
+        "duration_seconds",
+        "segment_count",
+        "discontinuity_count",
+        "dropped_segments",
+        "sessions",
+        "first_program_date_time",
+        "sealed_by",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

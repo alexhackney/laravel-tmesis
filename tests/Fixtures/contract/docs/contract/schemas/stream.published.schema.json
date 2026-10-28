@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/StreamPublished",
+  "$defs": {
+    "PublishAuth": {
+      "type": "object",
+      "properties": {
+        "kid": {
+          "type": "string",
+          "description": "Which configured verify secret matched, or dual-accept for a legacy bare key"
+        },
+        "key_epoch": {
+          "type": "integer",
+          "description": "The KEY epoch from field 2 of the stream key. Not the session epoch and not the fencing epoch (API.md 8.3)."
+        },
+        "dual_accept": {
+          "type": "boolean",
+          "description": "true means this producer is still on a legacy bare key and needs re-keying. This field is the re-keying workflow's data source: the window closes when it stops appearing, not on a date."
+        },
+        "key_type": {
+          "type": "string",
+          "enum": [
+            "signed",
+            "bare_configured",
+            "bare_unproven"
+          ]
+        },
+        "open_posture": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "kid",
+        "key_epoch",
+        "dual_accept",
+        "key_type",
+        "open_posture"
+      ],
+      "additionalProperties": false
+    },
+    "StreamPublished": {
+      "type": "object",
+      "properties": {
+        "event": {
+          "type": "string",
+          "description": "The event name. Matches X-Tmesis-Event.",
+          "const": "stream.published"
+        },
+        "delivery": {
+          "type": "string",
+          "description": "The delivery ULID. Matches X-Tmesis-Delivery. Duplicated in the body so a receiver that logs bodies has the dedupe key without the headers."
+        },
+        "occurred_at": {
+          "type": "string",
+          "description": "RFC3339 UTC, when the event happened on the node. ORDER BY THIS, never by arrival: delivery is unordered."
+        },
+        "node": {
+          "type": "string"
+        },
+        "node_role": {
+          "type": "string",
+          "enum": [
+            "edge",
+            "origin",
+            "transcoder",
+            "standalone"
+          ]
+        },
+        "contract_version": {
+          "type": "integer"
+        },
+        "stream": {
+          "type": "string"
+        },
+        "session": {
+          "type": "string",
+          "description": "Session ULID. Correlates with stream.unpublished and the per-feed timeline."
+        },
+        "epoch": {
+          "type": "integer",
+          "description": "The SESSION epoch: local publish generation for this stream. Not the key epoch."
+        },
+        "protocol": {
+          "type": "string",
+          "enum": [
+            "srt",
+            "rtmp",
+            "rtmps"
+          ]
+        },
+        "remote": {
+          "type": "string",
+          "description": "Publisher address and port. Present for operators; it is not an authorization input."
+        },
+        "role": {
+          "type": "string",
+          "description": "From the structured stream id. Stream roles are attributes, never name suffixes.",
+          "enum": [
+            "primary",
+            "backup",
+            "rehearsal",
+            "internal-tap"
+          ]
+        },
+        "takeover": {
+          "type": "boolean"
+        },
+        "auth": {
+          "$ref": "#/$defs/PublishAuth"
+        },
+        "labels": {
+          "type": "object",
+          "description": "Echoes the labels set on the stream. The node never interprets them.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "event",
+        "delivery",
+        "occurred_at",
+        "node",
+        "node_role",
+        "contract_version",
+        "stream",
+        "session",
+        "epoch",
+        "protocol",
+        "remote",
+        "role",
+        "takeover",
+        "auth",
+        "labels"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

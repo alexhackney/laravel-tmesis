@@ -1,0 +1,27 @@
+{
+  "event": "job.progress",
+  "delivery": "01J8ZCR8K4M2QNX7VW5TRB3PD9",
+  "occurred_at": "2026-08-28T19:38:02.331Z",
+  "node": "origin-atl-01",
+  "node_role": "origin",
+  "contract_version": 1,
+  "job": "job_01J8ZCA2R7F3H9NQ4KTX8VD5YB",
+  "state": "running",
+  "percent": 41.7,
+  "stage": "encode",
+  "speed": 3.9,
+  "eta_seconds": 402,
+  "outputs": [
+    {
+      "kind": "audio",
+      "generation": "01J8ZD02R7F3H9NQ4KTX8VD5Y3",
+      "state": "completed",
+      "url": "s3://tsp-media/videos/941/audio.m4a",
+      "bytes": 148372615,
+      "format": "aac"
+    }
+  ],
+  "labels": {
+    "video_id": "941"
+  }
+}
