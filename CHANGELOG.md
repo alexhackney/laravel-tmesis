@@ -5,6 +5,26 @@ All notable changes to `alexhackney/laravel-tmesis` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2026-10-29
+
+The tmesis `v0.9.6` contract. tmesis `v0.9.6` is a patch that changes nothing under
+`docs/contract/` or `test/vectors/`: every contract artifact is byte-identical to `v0.9.5`
+(`openapi.json` md5 `f3b048ab06f80154ead5ae1da103b227`), so no DTO, event, route or field
+changed and the bundled copies moved only in the pin. Pinned to the tmesis `v0.9.6` tag
+(`53429cb`).
+
+### Changed
+
+- Docblocks only, nothing decodes differently:
+  - `HealthFull::DEGRADED_ENCODER_BEHIND` names its second cause: every video rung of an open,
+    attached stream has delivered no fragment for the rung idle bound while audio still
+    flows. Tell the causes apart by `encode[].seconds_since_last_fragment` (`speed_ratio` about
+    1.0 for the new cause, under 0.99 for the old one);
+  - `StreamEvent::kind()` mentions the new timeline-only kind `encoder.video_silent`, which a
+    consumer that matches on kinds must tolerate as an open string.
+- A `stream.sealed` webhook can now arrive up to five minutes late, redelivered under the same
+  `X-Tmesis-Delivery` id; receivers already dedupe on it and order by `occurred_at`.
+
 ## [0.9.5] - 2026-10-28
 
 The tmesis `v0.9.4` and `v0.9.5` contract, released as one package version. tmesis `v0.9.5` is

@@ -20,7 +20,7 @@ env:
   # PROVENANCE.md Tag row (the full Commit row for an untagged pin). bin/repin writes
   # it, and the provenance leg (tests/Contract/WorkflowPinTest.php) fails when the two
   # disagree.
-  TMESIS_TAG: v0.9.5
+  TMESIS_TAG: v0.9.6
 
 jobs:
   pint:

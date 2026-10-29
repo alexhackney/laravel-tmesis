@@ -5,14 +5,14 @@ body:
     id: version
     attributes:
       label: Package version
-      placeholder: v0.9.5
+      placeholder: v0.9.6
     validations:
       required: true
   - type: input
     id: tmesis
     attributes:
       label: Tmesis node version
-      placeholder: v0.9.5
+      placeholder: v0.9.6
   - type: input
     id: stack
     attributes:

@@ -67,8 +67,10 @@ final readonly class StreamEvent
      * `cause` and `segment_dir`; details() carries each kind's object). Since
      * tmesis `v0.8.0` a SEALED orphan window also emits stream.sealed with
      * `sealed_by: crash_recovered` (TMESIS-44; before, the timeline row was the only
-     * record); a discarded one still emits nothing. API.md 9.5a, 9.7; final plan
-     * 11.37.
+     * record); a discarded one still emits nothing. Since tmesis `v0.9.6` the timeline also
+     * carries `encoder.video_silent` (an `info` row when every video rung stops delivering
+     * while audio flows, another when video returns; timeline only, no webhook). API.md
+     * 9.5a, 9.7; final plan 11.37.
      */
     public function kind(): string
     {
