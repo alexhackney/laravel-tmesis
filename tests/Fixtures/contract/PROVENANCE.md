@@ -8,9 +8,9 @@ there.
 | | |
 |---|---|
 | Source repository | `Hackney-Enterprises-Inc/tmesis` (private) |
-| Tag | `v0.9.5` |
-| Commit | `bfad9a68f5db20a5ce09b0e300c53a55bb98f95e` |
-| Copied on | 2026-10-28 |
+| Tag | `v0.9.6` |
+| Commit | `53429cb98367410c9124e409f83d673488b3f5e0` |
+| Copied on | 2026-10-29 |
 
 The header rows and the table below are written by `bin/repin` from the checkout's git
 state (the Commit row is `HEAD`, the Tag row is `HEAD`'s exact tag or the `--tag` given

@@ -31,10 +31,10 @@ What you get:
 
 ## Versioning
 
-**Pinned to Tmesis `v0.9.5`** (the tag; the commit is in
+**Pinned to Tmesis `v0.9.6`** (the tag; the commit is in
 `tests/Fixtures/contract/PROVENANCE.md`). A package release carries the same version
-string as the tmesis release whose contract it carries, so `v0.9.5` of this package is
-the tmesis `v0.9.5` contract. A package-only change (a fix, a test leg, fixtures) takes
+string as the tmesis release whose contract it carries, so `v0.9.6` of this package is
+the tmesis `v0.9.6` contract. A package-only change (a fix, a test leg, fixtures) takes
 the next PATCH on the line it carries.
 
 Inside tmesis v1 every contract change is additive by policy and the package tolerates
