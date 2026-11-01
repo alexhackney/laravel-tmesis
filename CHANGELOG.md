@@ -5,6 +5,43 @@ All notable changes to `alexhackney/laravel-tmesis` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.7] - 2026-11-01
+
+The tmesis `v0.9.7` contract. tmesis `v0.9.7` is a patch (additions only) that changes
+`docs/contract/openapi.json` by exactly one description string (md5
+`1803edecdd168b9a70adbcd65cb9253c`, was `f3b048ab06f80154ead5ae1da103b227`); `test/vectors/`,
+the schemas, the examples and the role templates are unchanged. No field, event, route, enum or
+DTO moved, and there is no journal migration. Pinned to the tmesis `v0.9.7` tag.
+
+### Changed
+
+- `captions.enabled` (create and patch bodies): an omitted or null value no longer always means
+  off. On a create it is the node's `transcription.captions_default` (`off` unless the node
+  turned it on, and always off on a ladder with no `audio_only` rung, where a stream that named
+  no captions object is never refused). On a PATCH, omitted keeps the stored value and `null`
+  clears the override back to that default. Explicit `false` is off; explicit `true` is on and
+  is 422 on a node whose `transcription.provider` is `none`, on a passthrough node, or on a
+  ladder with no `audio_only` rung. To mean "no captions" on every node, send `enabled: false`
+  explicitly. `CaptionsRecord::enabled()` still reports the resolved value for the stream.
+- `StreamEvent::kind()` docblock only: the `encoder.video_silent` start row now means every video
+  rung stopped delivering fragments after audio last delivered, its `message` text changed (match
+  on `kind` plus `stderr_fatal`, never on the text), and the clear row is written only when a
+  video fragment is delivered again. `encoder_behind` raised by that rule now stays set until
+  video recovers or the session is held or closed, even if audio stalls afterwards.
+
+### Node behaviour a consumer may notice
+
+No package code changed for these; they are tmesis `v0.9.7` node changes.
+
+- `GET /` on an origin's delivery listener answers 200 (new key `delivery.origin.splash_file`)
+  instead of 404. Probe a real playlist path for "origin up", not `/`.
+- Doctor verdicts name a bound port's holder on Linux: a foreign holder is now a FAIL (the
+  optional ACME/redirect port stays a WARN), so an API doctor verdict can flip to FAIL.
+- New node keys `transcription.captions_default` and `storage.transfer_slots` (1..64, default
+  8). `ConfigRenderer` does not emit them; all default to the previous behaviour.
+- `install.sh` enables a capped persistent journald and installs `rclone` and `nload` by default
+  (`--no-journald`, `--no-tools` opt out).
+
 ## [0.9.6] - 2026-10-29
 
 The tmesis `v0.9.6` contract. tmesis `v0.9.6` is a patch that changes nothing under
