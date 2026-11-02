@@ -8,9 +8,9 @@ there.
 | | |
 |---|---|
 | Source repository | `Hackney-Enterprises-Inc/tmesis` (private) |
-| Tag | `v0.9.6` |
-| Commit | `53429cb98367410c9124e409f83d673488b3f5e0` |
-| Copied on | 2026-10-29 |
+| Tag | `v0.9.7` |
+| Commit | `1929d57ace87b35c6a6e177a9c18bcdf504d46fa` |
+| Copied on | 2026-11-01 |
 
 The header rows and the table below are written by `bin/repin` from the checkout's git
 state (the Commit row is `HEAD`, the Tag row is `HEAD`'s exact tag or the `--tag` given
@@ -346,7 +346,7 @@ a16887e2a049da4294da89029cd586ee0bc50f9d7661a3a443f90a87badf244e  docs/contract/
 628ab73de900be0f26212068256437a2d46f414b566fb0a464ed5fb6d6fbacea  docs/contract/examples/transfer.authorization_required.json
 68975799158bab647951cae5714833a0092ffdde291bc3a222c23516201060f9  docs/contract/examples/transfer.completed.json
 92ccde59d829a33ffd11b6a8e6578460ca1d89a1af68e7b17016045c85c87607  docs/contract/examples/transfer.failed.json
-98c0a8943380ba7b37c93b3c07a9f0abb5f8eba01bab3d51bccb0dbfe2094af6  docs/contract/openapi.json
+ae89b5376e4e744eaeddd05e8d85a44f456c03f44a83bd95f998a2b1580506d4  docs/contract/openapi.json
 53b710b126626b91f97828ff64d3e2f21c703f5ce6db10eb46373765d8bf5a35  docs/contract/schemas/artifact.deleted.schema.json
 e8054460eb686ee828da5f736db8f7930564950520fb3169cd589d6a8cd60299  docs/contract/schemas/artifact.finalized.schema.json
 19a77152973c15080381679e970a6838b3171e1de2d1f06f97e668948c2a30b7  docs/contract/schemas/artifact.released.schema.json

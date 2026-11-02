@@ -713,7 +713,7 @@
             ]
           },
           "enabled": {
-            "description": "Open a provider session for this stream and write the caption rendition (next_segment). The cost control: a captioning stream streams audio to the provider for the whole session, silence included. Omitted or null is off. 422 on a node whose transcription.provider is none, on a passthrough node, or on a ladder with no audio_only rung.",
+            "description": "Open a provider session for this stream and write the caption rendition (next_segment). The cost control: a captioning stream streams audio to the provider for the whole session, silence included. On a create, omitted or null is the node's transcription.captions_default, off unless the node turned it on, and always off on a ladder with no audio_only rung (a stream that named no captions object is never refused for one). On a PATCH, omitted keeps the stored value and null clears it back to that default. Explicit false is off. Explicit true is on, and is 422 on a node whose transcription.provider is none, on a passthrough node, or on a ladder with no audio_only rung.",
             "oneOf": [
               {
                 "type": "boolean"

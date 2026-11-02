@@ -69,7 +69,13 @@ final readonly class StreamEvent
      * `sealed_by: crash_recovered` (TMESIS-44; before, the timeline row was the only
      * record); a discarded one still emits nothing. Since tmesis `v0.9.6` the timeline also
      * carries `encoder.video_silent` (an `info` row when every video rung stops delivering
-     * while audio flows, another when video returns; timeline only, no webhook). API.md
+     * fragments after audio last delivered, another when a video fragment is delivered
+     * again; timeline only, no webhook). Since `v0.9.7` the start row's `message` reads
+     * "every video rung has stopped delivering fragments; audio last delivered after the
+     * video stopped (it may have stalled since)" (a video-only ladder's does not mention
+     * audio), and the clear row is written only on real video recovery, never when audio
+     * also stops. Match on `kind` plus the presence of `stderr_fatal` (start row only),
+     * never on the message text. API.md
      * 9.5a, 9.7; final plan 11.37.
      */
     public function kind(): string
