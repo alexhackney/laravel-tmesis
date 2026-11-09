@@ -12,7 +12,8 @@ use AlexHackney\Tmesis\Support\RelayUrl;
  *
  * All three fields are optional and an omitted one is not mentioned, so
  * `RelayPatch::make(enabled: false)` parks a destination without touching its URL.
- * A patch that mentions nothing is refused here rather than sent, because the node
+ * Since tmesis `v0.10.0` `enabled` is also valid on a static (config file) destination,
+ * where it is the only accepted field. A patch that mentions nothing is refused here rather than sent, because the node
  * would answer 422 and the round trip says nothing the caller did not already know.
  *
  * `feed` (tmesis `v0.4.0`) is a new feed as on create (`RelayFeed`). On a RUNNING

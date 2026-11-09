@@ -25,7 +25,8 @@
       "provider_checksum_type": "COMPOSITE",
       "provider_version_id": "3HL4kqtJlcpXroDTDmJ.rmSpXd3dIbrHY",
       "completed_at": "2026-09-22T22:41:17.902Z",
-      "error": null
+      "error": null,
+      "last_attempt": null
     },
     {
       "id": "01J8ZCK9T4N2QWX6VM3RKB9PD8",
@@ -58,7 +59,8 @@
       "error": {
         "code": "authorization_missing",
         "message": "Supply signed requests for the current multipart upload"
-      }
+      },
+      "last_attempt": null
     }
   ],
   "limit": 100,

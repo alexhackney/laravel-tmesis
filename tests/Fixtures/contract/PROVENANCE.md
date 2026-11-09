@@ -8,9 +8,9 @@ there.
 | | |
 |---|---|
 | Source repository | `Hackney-Enterprises-Inc/tmesis` (private) |
-| Tag | `v0.9.7` |
-| Commit | `1929d57ace87b35c6a6e177a9c18bcdf504d46fa` |
-| Copied on | 2026-11-01 |
+| Tag | `v0.10.0` |
+| Commit | `c0898cbb05740b5ac7089acbef631d73c8333b05` |
+| Copied on | 2026-11-09 |
 
 The header rows and the table below are written by `bin/repin` from the checkout's git
 state (the Commit row is `HEAD`, the Tag row is `HEAD`'s exact tag or the `--tag` given
@@ -250,6 +250,25 @@ transcription keys) with its `MD5SUMS`. `test/vectors/` did not move. This match
 tmesis handover (`handover-laravel-tmesis-v0.9.3.md`:
 C1 to C6, eight files).
 
+**The v0.10.0 repin (2026-11-08, before the tag).** `bin/repin --allow-dirty` from the
+release tree, which was uncommitted against the `v0.9.7` commit (`1929d57`) when it was
+copied, so the Commit row above names the base commit and says the paths were dirty. It
+is rewritten, and every sha256 row below re-checked, when `bin/repin` is run again from
+a checkout at the `v0.10.0` tag. Thirteen artifacts moved and none arrived (98 rows, 96
+copied files, unchanged): `openapi.json` (md5 `2fa511dd95928695ac472828a0b4a44a`, the
+handover's, was `1803edecdd168b9a70adbcd65cb9253c`; 71 operations, `createMediaEdit`
+leaving its `M8` milestone stub for a live route, and twelve new components: the edit
+family, `JobEdit` and its two parts, `LastAttempt`, `RelayLastSession`),
+`examples/transfer.failed.json` (`"last_attempt": null`), and eleven schemas:
+`artifact.deleted`, `artifact.finalized`, `artifact.released`,
+`transfer.authorization_required`, `transfer.completed` (each gains `job_media_edit` in
+`ArtifactIdentity.kind`), `transfer.failed` (`TransferAttempt` and the REQUIRED nullable
+`last_attempt`), `job.completed` (`edit`, `JobEdit`, `JobEditInput`, `JobEditRange`),
+`job.failed`, `job.progress` (stage `edit`), `job.queued` (`source.prefix` and
+`source.rendition`) and `node.online` (the `config_source` enum). `test/vectors/`, the
+role templates and `MD5SUMS` did not move. This matches the tmesis handover for the
+package (thirteen files, the same list).
+
 **The freeze, for the record.** Tmesis froze the v1 contract on 2026-09-11 (`docs/API.md`
 and `docs/WEBHOOKS.md` headers); the rc2 pin was verified byte-identical to the freeze
 at tmesis `main` `79b46cd` on 2026-09-13. Inside v1 every change is additive by policy,
@@ -345,21 +364,21 @@ a16887e2a049da4294da89029cd586ee0bc50f9d7661a3a443f90a87badf244e  docs/contract/
 7c2838351e79d037804fc14fd5f707ebeb0d1080fc79ae9116338e609c489696  docs/contract/examples/stream.unpublished.json
 628ab73de900be0f26212068256437a2d46f414b566fb0a464ed5fb6d6fbacea  docs/contract/examples/transfer.authorization_required.json
 68975799158bab647951cae5714833a0092ffdde291bc3a222c23516201060f9  docs/contract/examples/transfer.completed.json
-92ccde59d829a33ffd11b6a8e6578460ca1d89a1af68e7b17016045c85c87607  docs/contract/examples/transfer.failed.json
-ae89b5376e4e744eaeddd05e8d85a44f456c03f44a83bd95f998a2b1580506d4  docs/contract/openapi.json
-53b710b126626b91f97828ff64d3e2f21c703f5ce6db10eb46373765d8bf5a35  docs/contract/schemas/artifact.deleted.schema.json
-e8054460eb686ee828da5f736db8f7930564950520fb3169cd589d6a8cd60299  docs/contract/schemas/artifact.finalized.schema.json
-19a77152973c15080381679e970a6838b3171e1de2d1f06f97e668948c2a30b7  docs/contract/schemas/artifact.released.schema.json
+45a40568111a192e3c69b41daca7f9de8751c81df86e85c728db7e4610a96e0f  docs/contract/examples/transfer.failed.json
+36595bdd6ea4aa64b79fb56a45f3422a3e52a1fd2a28591dbd89a1801289f8b6  docs/contract/openapi.json
+3d813ceff1ad8b872e593c8dd3ea9b0ac2f76319b3edbcb794c07ad1258587c0  docs/contract/schemas/artifact.deleted.schema.json
+a9e16990223be67c9891f1897db4b91fc56402922ef735bae39b7aacf5bd38f0  docs/contract/schemas/artifact.finalized.schema.json
+90eab6733b29799d2b7bb17bc6a1e580b7c4d1b5605db0a3faaa46c9d3a4fb6f  docs/contract/schemas/artifact.released.schema.json
 5e01f87bdc32b992ae5eb0b47fdcfaa372aba27d3d2dbfee81e327ec87dc1a97  docs/contract/schemas/caption.session_ended.schema.json
 1ad5a1df995540f8935819b23c85b16f2e278a1cfb2307de57aad5ca6f4397a3  docs/contract/schemas/caption.session_started.schema.json
 70826800c1e16e1e2af6c7fb3fcc0549c975347810dc1345a265368c9a1a4cb5  docs/contract/schemas/fleet.enroll.request.schema.json
 ff5e116e21684c3e2500fd729bc67a750f0893e812340ee56e1611b0dd1a4b84  docs/contract/schemas/fleet.enroll.response.schema.json
 b15646100eb3b4730d7921e7b43333edfba96add07f8542f71a6247a2ee35548  docs/contract/schemas/fleet.heartbeat.request.schema.json
 d4ac3f594a7dd98d23f1d3de4f5ef17df7f2c90c14c668b515abafcacb64f049  docs/contract/schemas/fleet.heartbeat.response.schema.json
-9135cccac67d35414b222ea4f854e8034a70966523207b7a058bb8aa82c1cfb6  docs/contract/schemas/job.completed.schema.json
-390ef09a9398c032662ffafde95138504d3be0d69bfef9610b62feea36f31dea  docs/contract/schemas/job.failed.schema.json
-93878d9dcf36ba8741ff5aaa5ec1be759e3f045bce77485ed015876fb47473a3  docs/contract/schemas/job.progress.schema.json
-424924c7d4517d4a0f0bf9b4ef42cc3c4424f77c0d2bff2b45c7b51c45e49ff9  docs/contract/schemas/job.queued.schema.json
+0eeae15ebaa736373d44d1a8023b1b40704a84130aac581f995752645b690a1f  docs/contract/schemas/job.completed.schema.json
+46413ed6fd62921efc5afb132bdcef792d34ce2e99929566a8623b4d2f854c2f  docs/contract/schemas/job.failed.schema.json
+5ae2f215b6b804063030d9da53867e142c302a96447f20b6debc687079cdeb50  docs/contract/schemas/job.progress.schema.json
+1355d9a51fd543530fd74644f78ae41550ef8c54571ae69c4e147abeb05c7f03  docs/contract/schemas/job.queued.schema.json
 0b2dcf424d4978cbfaa3739f2eebf011b6b3cc946b10614054163500c073dba2  docs/contract/schemas/job.started.schema.json
 9d1293565d5e46f05ba119149ef743b6d3222fa733ded1672aca2ae4c567f64c  docs/contract/schemas/jobs.paused.schema.json
 a7479c197139faaf7656bca7371336e618c18c3555938905275fc331504fdc65  docs/contract/schemas/jobs.resumed.schema.json
@@ -369,7 +388,7 @@ ca33094b30972a4439c63966269cb4b2fd48c2907001916776c8b99f68e8e799  docs/contract/
 ec894d5810c59aabd8ab26220f8ed90afaacc036078b798f41c382a0b9ca775a  docs/contract/schemas/node.capacity_changed.schema.json
 04e2d3db44172dafa88ea95478d3d4692eec878cea16d24ce913ecd87018803e  docs/contract/schemas/node.disk_floor_near.schema.json
 6213c2b8a9beb064b2cf268b92dd3125217b056412fcde3fa244a55430084b8b  docs/contract/schemas/node.draining.schema.json
-757ebcdb8eee5e86e11c93dbe85167df8439a6b3500a2bd2b8f595b04f34e365  docs/contract/schemas/node.online.schema.json
+afd193b8bf50e070d5c549b515301abe28f9bbcb4a4e313130285a6d11dc19bd  docs/contract/schemas/node.online.schema.json
 fa20c17da53279a7f3b9c91e5598b632f3230d4ce3246b25a41f6ddd97796418  docs/contract/schemas/publish.verify.response.schema.json
 49ccb8420da479c1a180b7f59c197bb47d266cb74a352343e5f410899772df65  docs/contract/schemas/publish.verify.schema.json
 f2d7815c40ec0aff75d8e38914703100ccda364f70653ed846b37c0ef02a3d8f  docs/contract/schemas/recording.completed.schema.json
@@ -389,9 +408,9 @@ f0c554afb6f2fbc25c80a035b56af45b6af37e054c3a04675b0033cc6bc537c5  docs/contract/
 7aeae8b86041e6caa6546a771622270797fcd6b35f8d40570992e435768c0fc2  docs/contract/schemas/stream.published.schema.json
 34e5ca3b12fb86f89e38bac155ca55af600b8976ecdcd34a52e29f68453cefa4  docs/contract/schemas/stream.sealed.schema.json
 34356f6f67ae2c54fa3f9be2384b4cda9a3ec6278f81801bd6e8688d0ab3e00e  docs/contract/schemas/stream.unpublished.schema.json
-4e0efd14eb423bdc7852f66674449209862ea935d27317474cd23f64690af88b  docs/contract/schemas/transfer.authorization_required.schema.json
-203e563bbd40c33302893501fba11e0590fc73d8719385f0698350701aa33051  docs/contract/schemas/transfer.completed.schema.json
-bd963a22200edab64af3e351613373264e7ce7fc85b6814e996b42594674fbf4  docs/contract/schemas/transfer.failed.schema.json
+4f59d1e944b45c5a11c76a591a8b97190db5691df7333af4a074c49db165c988  docs/contract/schemas/transfer.authorization_required.schema.json
+3b5dcbbd9c2a0c667f9c2a8981daa3f47ece96e377ef6486fb72a08e19a3e9b2  docs/contract/schemas/transfer.completed.schema.json
+387b4983079f2c814693cb86c7f7d4b703680a9210d2d7d80abe4d96362209c2  docs/contract/schemas/transfer.failed.schema.json
 a4faafc2a3823d71d02c20142ccfe6be49d6337d147bd4369c172a9547826210  docs/contract/templates/MD5SUMS
 03db3a73872f459cdbf747e2bd5560f6cb45618cd61b0a290d837448748ca107  docs/contract/templates/config.edge.yml
 ebcf8da218cf9ec599da81421ec995e161fda7b955e76b2df38301da390212d7  docs/contract/templates/config.origin.yml
@@ -489,3 +508,4 @@ longer captured here at all: the generated examples are the node's own bodies.
 | `tests/Fixtures/responses/createMaster.json` | component `ArtifactStatus` with `MasterInfo` | 2026-10-06 | component-derived from `docs/API.md` 12a.8 (tmesis `v0.8.0`), which has no marked fence: the `202` body, a HELD `recording_master` generation (every finalization field null, `not_finalized` and `release_required`) whose `master` is `queued` over two `recording_ingest` sources in join order (the first is `getArtifact.json`'s), `capture_container` `mpegts`, a configured `tsp-media` target resolved secret-free with its told `key`, and `error` null; recapture owed |
 | `tests/Fixtures/responses/purgeArtifact.json` | component `DecisionStatus` | 2026-10-06 | component-derived from `docs/API.md` 12a.5b (tmesis `v0.8.0`): `releaseArtifact.json` as the purge records it, a release of the current revision with `purge_requested_at` and `purge_reason` set (the reason the request carried); recapture owed |
 | `tests/Fixtures/responses/purgeJobArtifact.json` | component `DecisionStatus` | 2026-10-06 | component-derived: `releaseJobArtifact.json` as a purge of its revision 1 records it, `purge_requested_at` and `purge_reason` set; the four job artifact fixtures (`listJobArtifacts`, `getJobArtifact`, `releaseJobArtifact`, `overrideJobArtifact`) gained the same required `v0.8.0` fields as their stream twins; recapture owed |
+| `tests/Fixtures/responses/createMediaEdit.json` | component `MediaEditAccepted` | 2026-11-08 | component-derived from `docs/API.md` 9.13 (tmesis `v0.10.0`), which has no marked fence: the `202` body of a queued `keyframe` edit with one `trim` operation, `kind` `media_edit`, the shape `createTranscodeJob.json` is for a transcode job; recapture owed |

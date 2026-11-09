@@ -44,7 +44,7 @@ final readonly class JobStatus
     public const TERMINAL_STATES = [self::STATE_COMPLETED, self::STATE_FAILED, self::STATE_CANCELLED];
 
     /** @var list<string> */
-    public const STAGES = ['fetch', 'probe', 'audio', 'encode', 'package', 'thumbnails', 'transcribe', 'upload', 'verify'];
+    public const STAGES = ['fetch', 'probe', 'edit', 'audio', 'encode', 'package', 'thumbnails', 'transcribe', 'upload', 'verify'];
 
     public const PRIORITY_LOW = 'low';
 
@@ -164,6 +164,18 @@ final readonly class JobStatus
 
         /** @var array<string, mixed>|null $value */
         return is_array($value) ? JobError::fromArray($value) : null;
+    }
+
+    /**
+     * What the edit did (tmesis `v0.10.0`): null for a job without an edit, present once
+     * the edit stage has run, whatever the outputs. Where the cut actually landed.
+     */
+    public function edit(): ?JobEdit
+    {
+        $value = $this->raw['edit'] ?? null;
+
+        /** @var array<string, mixed>|null $value */
+        return is_array($value) ? JobEdit::fromArray($value) : null;
     }
 
     /**

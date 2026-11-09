@@ -10,6 +10,8 @@ use AlexHackney\Tmesis\Data\Jobs\JobListPage;
 use AlexHackney\Tmesis\Data\Jobs\JobPauseRequest;
 use AlexHackney\Tmesis\Data\Jobs\JobPauseResponse;
 use AlexHackney\Tmesis\Data\Jobs\JobStatus;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditAccepted;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditRequest;
 use AlexHackney\Tmesis\Data\Jobs\Spec;
 use AlexHackney\Tmesis\Resources\Artifacts;
 use AlexHackney\Tmesis\Resources\TranscodeJobs;
@@ -36,6 +38,17 @@ class FakeTranscodeJobsResource extends TranscodeJobs
         $this->fake->record('createTranscodeJob', $this->node, ['job' => $body]);
 
         return $this->fake->jobLedger()->submit($job, $this->node);
+    }
+
+    /**
+     * Experimental in tmesis `v0.10.0`, like the real call; the fake models none of the
+     * node's field-gated behaviour (disk admission, rotation, non-IDR boundaries).
+     */
+    public function createMediaEdit(MediaEditRequest $request): MediaEditAccepted
+    {
+        $this->fake->record('createMediaEdit', $this->node, ['edit' => $request->toRedactedArray()]);
+
+        return $this->fake->jobLedger()->submitEdit($request, $this->node);
     }
 
     public function listTranscodeJobs(?string $state = null, ?int $limit = null, ?string $cursor = null): JobListPage

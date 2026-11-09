@@ -8,5 +8,15 @@
   "dropped_bytes": 0,
   "reconnects": 0,
   "feed": "auto",
-  "feed_resolved": "ingest"
+  "feed_resolved": "ingest",
+  "aliases": [
+    "01J8ZCC1H6V9DQ2NR5TXB4KM7X"
+  ],
+  "last_session": {
+    "ended_at": "2026-11-08T19:12:44.120Z",
+    "bytes_out": 9245056000,
+    "dropped_bytes": 0,
+    "reconnects": 1
+  },
+  "parked": false
 }

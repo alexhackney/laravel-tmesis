@@ -12,6 +12,40 @@ use DateTimeImmutable;
  */
 final readonly class RecordingSnapshot
 {
+    public const ARTIFACT_INGEST = 'ingest';
+
+    public const ARTIFACT_MASTER = 'master';
+
+    /** @var list<string> */
+    public const ARTIFACTS = [self::ARTIFACT_INGEST, self::ARTIFACT_MASTER];
+
+    public const CONTAINER_FMP4 = 'fmp4';
+
+    public const CONTAINER_MPEGTS = 'mpegts';
+
+    public const CONTAINER_FLV = 'flv';
+
+    /** @var list<string> */
+    public const CONTAINERS = [self::CONTAINER_FMP4, self::CONTAINER_MPEGTS, self::CONTAINER_FLV];
+
+    public const STATE_ACTIVE = 'active';
+
+    public const STATE_DEGRADED = 'degraded';
+
+    public const STATE_FINALIZED = 'finalized';
+
+    public const STATE_REGISTERED = 'registered';
+
+    public const STATE_FAILED = 'failed';
+
+    /**
+     * The closed sets of `artifact()`, `container()` and `state()` (tmesis `v0.10.0` pins
+     * them in the contract).
+     *
+     * @var list<string>
+     */
+    public const STATES = [self::STATE_ACTIVE, self::STATE_DEGRADED, self::STATE_FINALIZED, self::STATE_REGISTERED, self::STATE_FAILED];
+
     /**
      * @param  array<string, mixed>  $raw
      */
@@ -37,7 +71,7 @@ final readonly class RecordingSnapshot
 
     /**
      * `mpegts` (an SRT publish) or `flv` (an RTMP publish) for the ingest copy: the
-     * capture container, never remuxed. `mp4` is the master's, M4.
+     * capture container, never remuxed. `fmp4` is the master's (one of CONTAINERS).
      */
     public function container(): string
     {

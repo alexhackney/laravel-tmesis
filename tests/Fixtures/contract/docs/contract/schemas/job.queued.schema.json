@@ -127,6 +127,14 @@
           "type": "string",
           "description": "The source object's key in that destination."
         },
+        "prefix": {
+          "type": "string",
+          "description": "An edit's HLS replay source: its bucket-relative prefix."
+        },
+        "rendition": {
+          "type": "string",
+          "description": "An edit's HLS source: the variant asked for, by its rung directory."
+        },
         "url": {
           "type": "string",
           "description": "The HTTPS source, with its query string (a presigned signature) removed."

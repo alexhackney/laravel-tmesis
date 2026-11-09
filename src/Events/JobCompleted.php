@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AlexHackney\Tmesis\Events;
 
+use AlexHackney\Tmesis\Data\Jobs\JobEdit;
 use AlexHackney\Tmesis\Data\Jobs\JobOutputReport;
 use AlexHackney\Tmesis\Data\Jobs\JobSourceReport;
 use AlexHackney\Tmesis\Data\Webhooks\JobProbeSummary;
@@ -61,6 +62,19 @@ class JobCompleted extends JobEvent
     public function outputs(): array
     {
         return $this->outputReports();
+    }
+
+    /**
+     * What the edit did (tmesis `v0.10.0`): null for a job without an edit. **The field
+     * a clip UI reads to say where the cut actually landed**; a keyframe cut can be up
+     * to one GOP longer at each end.
+     */
+    public function edit(): ?JobEdit
+    {
+        $value = $this->payload['edit'] ?? null;
+
+        /** @var array<string, mixed>|null $value */
+        return is_array($value) ? JobEdit::fromArray($value) : null;
     }
 
     /**

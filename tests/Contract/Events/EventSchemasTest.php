@@ -274,8 +274,10 @@ it('holds transfer.authorization_required\'s closed reason set as REASONS', func
 it('carries the same eight identity fields, typed alike, on all six artifact and transfer events', function (string $event): void {
     $schema = ContractDir::readJson(ContractDir::schema($event));
 
+    // The root is the def the schema's own $ref names, not the first def: since v0.10.0
+    // transfer.failed also carries TransferAttempt, which sorts ahead of it.
     /** @var array<string, mixed> $root */
-    $root = array_values($schema['$defs'])[0];
+    $root = $schema['$defs'][basename((string) $schema['$ref'])];
 
     // job_id joined at v0.6.0, and the three session fields became nullable: null on
     // a job generation, which names job_id instead.

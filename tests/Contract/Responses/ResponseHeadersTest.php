@@ -42,6 +42,8 @@ const REQUIRED_RESPONSE_HEADERS = [
         .'job transfer-plan path getJobTransferPlan() reads for the same job and generation (v0.6.0)',
     'createTranscodeJob 202 Location' => 'not read: the JobAccepted in the body carries the id, and the value is the '
         .'job path getTranscodeJob() reads for it (tmesis v0.6.0 tag); the leg holds the value to that path',
+    'createMediaEdit 202 Location' => 'not read: the MediaEditAccepted in the body carries the id, and the value is the '
+        .'job path getTranscodeJob() reads for it (tmesis v0.10.0); the leg holds the value to that path',
     'createMaster 202 Location' => 'not read: ArtifactStatus::$created carries the 202, and the value is the '
         .'artifact path getArtifact() reads with the generation id the body already carries (tmesis v0.8.0)',
     'whepJoin 201 Location' => 'off-listener: the WHEP session resource a player DELETEs to leave; never on the admin client',
@@ -119,11 +121,12 @@ it('accounts for every required response header in the document, and for no othe
     // counts: three on admin operations, four on the preview listener (v0.4.0 added
     // the two Retry-After rows; three in all at v0.3.0; v0.5.0 the transfer plan's
     // Location; v0.6.0 the job transfer plan's Location; v0.8.0 the master's Location;
-    // v0.9.0 none: the three jobs pause routes reference only the shared headers).
+    // v0.9.0 none: the three jobs pause routes reference only the shared headers; v0.10.0
+    // the edit route's Location).
     $admin = array_filter(requiredResponseHeaders(), static fn (array $h): bool => $h['listener'] === null);
 
-    expect(requiredResponseHeaders())->toHaveCount(9)
-        ->and($admin)->toHaveCount(5);
+    expect(requiredResponseHeaders())->toHaveCount(10)
+        ->and($admin)->toHaveCount(6);
 });
 
 it('holds the shared node headers on every admin response and on no WHEP row (v0.4.0)', function (): void {

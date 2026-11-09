@@ -16,6 +16,21 @@ use DateTimeImmutable;
  */
 final readonly class SessionSnapshot
 {
+    public const PROTOCOL_SRT = 'srt';
+
+    public const PROTOCOL_RTMP = 'rtmp';
+
+    public const PROTOCOL_RTMPS = 'rtmps';
+
+    public const PROTOCOL_UNKNOWN = 'unknown';
+
+    /**
+     * The closed set of `protocol()` (tmesis `v0.10.0` pins it in the contract).
+     *
+     * @var list<string>
+     */
+    public const PROTOCOLS = [self::PROTOCOL_SRT, self::PROTOCOL_RTMP, self::PROTOCOL_RTMPS, self::PROTOCOL_UNKNOWN];
+
     /**
      * @param  array<string, mixed>  $raw
      */

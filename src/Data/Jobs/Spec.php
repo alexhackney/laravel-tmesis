@@ -58,6 +58,12 @@ final readonly class Spec
     public const OUTPUT_TRANSCRIPT = 'transcript';
 
     /**
+     * The edited file (tmesis `v0.10.0`): one file at a told key, and only on a job
+     * that carries an `edit`.
+     */
+    public const OUTPUT_MEDIA_EDIT = 'media_edit';
+
+    /**
      * The v1 output set.
      *
      * @var list<string>
@@ -69,7 +75,16 @@ final readonly class Spec
         self::OUTPUT_THUMBNAILS,
         self::OUTPUT_PROBE,
         self::OUTPUT_TRANSCRIPT,
+        self::OUTPUT_MEDIA_EDIT,
     ];
+
+    /**
+     * The containers of a `media_edit` output: video `mp4` (the default), `mov`, `mkv`,
+     * `ts`, and audio `m4a`, `mp3`, `ogg` (an `extract_audio` edit's).
+     *
+     * @var list<string>
+     */
+    public const CONTAINERS = ['mp4', 'mov', 'mkv', 'ts', 'm4a', 'mp3', 'ogg'];
 
     /**
      * Each output's artifact generation kind (`ArtifactStatus::JOB_KINDS`): what
@@ -84,6 +99,7 @@ final readonly class Spec
         self::OUTPUT_THUMBNAILS => ArtifactStatus::KIND_JOB_THUMBNAILS,
         self::OUTPUT_PROBE => ArtifactStatus::KIND_JOB_PROBE,
         self::OUTPUT_TRANSCRIPT => ArtifactStatus::KIND_JOB_TRANSCRIPT,
+        self::OUTPUT_MEDIA_EDIT => ArtifactStatus::KIND_JOB_MEDIA_EDIT,
     ];
 
     /**
@@ -204,6 +220,18 @@ final readonly class Spec
      */
     public function labels(array $labels): self
     {
+        self::guardLabels($labels);
+
+        return $this->with('labels', $labels);
+    }
+
+    /**
+     * The label limits, shared with MediaEditRequest: refused before the request.
+     *
+     * @param  array<string, string>  $labels
+     */
+    public static function guardLabels(array $labels): void
+    {
         if (count($labels) > StreamSpec::MAX_LABELS) {
             throw InvalidConfigurationException::invalid('labels', 'at most '.StreamSpec::MAX_LABELS.' keys');
         }
@@ -217,8 +245,6 @@ final readonly class Spec
                 throw InvalidConfigurationException::invalid("labels.{$key}", 'the value is over 256 bytes');
             }
         }
-
-        return $this->with('labels', $labels);
     }
 
     /**
@@ -252,6 +278,35 @@ final readonly class Spec
     public function transcript(TranscriptOpts $options): self
     {
         return $this->with('transcript', $options);
+    }
+
+    /**
+     * Cut the source before its outputs are made (tmesis `v0.10.0`). On this route the
+     * node accepts RANGE operations only (`trim`, `concat`); a frame operation, a
+     * `rewrap` or an `extract_audio` is refused here, naming `createMediaEdit()`. The
+     * `media_edit` output may then sit beside `hls_ladder`, `transcript` and the rest,
+     * all reading the one edited file.
+     */
+    public function edit(EditSpec $edit): self
+    {
+        if ($edit->needsMediaEdits()) {
+            throw InvalidConfigurationException::invalid('edit', 'crop, scale, rewrap and extract_audio are not accepted on a transcode job; use TranscodeJobs::createMediaEdit()');
+        }
+
+        return $this->with('edit', $edit);
+    }
+
+    /**
+     * The `media_edit` output's container: `mp4` (the default), `mov`, `mkv`, `ts`
+     * (video) or `m4a`, `mp3`, `ogg` (audio). Needs a `media_edit` output.
+     */
+    public function container(string $container): self
+    {
+        if (! in_array($container, self::CONTAINERS, true)) {
+            throw InvalidConfigurationException::invalid('container', 'it must be one of '.implode(', ', self::CONTAINERS));
+        }
+
+        return $this->with('container', $container);
     }
 
     public function source(): JobSource
@@ -290,7 +345,7 @@ final readonly class Spec
      */
     public function toArray(): array
     {
-        return $this->render($this->source->toArray());
+        return $this->render($this->source->toArray(), false);
     }
 
     /**
@@ -301,18 +356,20 @@ final readonly class Spec
      */
     public function toRedactedArray(): array
     {
-        return $this->render($this->source->redacted());
+        return $this->render($this->source->redacted(), true);
     }
 
     /**
      * @param  array<string, string>  $source
      * @return array<string, mixed>
      */
-    private function render(array $source): array
+    private function render(array $source, bool $redacted): array
     {
         if ($this->targets === []) {
             throw InvalidConfigurationException::invalid('outputs', 'a job asks for at least one output: add a target()');
         }
+
+        $this->guardEdit();
 
         if (! isset($this->fields['ladder']) && array_intersect(self::LADDER_OUTPUTS, $this->outputs()) !== []) {
             throw InvalidConfigurationException::invalid('ladder', 'hls_ladder and mp4 need a ladder');
@@ -329,7 +386,11 @@ final readonly class Spec
         ];
 
         foreach ($this->fields as $field => $value) {
-            $value = is_object($value) && method_exists($value, 'toArray') ? $value->toArray() : $value;
+            if ($value instanceof EditSpec) {
+                $value = $redacted ? $value->toRedactedArray() : $value->toArray();
+            } elseif (is_object($value) && method_exists($value, 'toArray')) {
+                $value = $value->toArray();
+            }
 
             // An empty map or option object is the node's default; `[]` would go out
             // as a JSON array, which is a type error there.
@@ -341,6 +402,28 @@ final readonly class Spec
         }
 
         return $body;
+    }
+
+    /**
+     * The edit rules the node refuses on the request alone: `media_edit` and an HLS
+     * `prefix` source both need an `edit`, and a `container` needs a `media_edit` output.
+     */
+    private function guardEdit(): void
+    {
+        $edit = isset($this->fields['edit']);
+        $mediaEdit = isset($this->targets[self::OUTPUT_MEDIA_EDIT]);
+
+        if ($mediaEdit && ! $edit) {
+            throw InvalidConfigurationException::invalid('outputs', 'a media_edit output needs an edit()');
+        }
+
+        if (isset($this->fields['container']) && ! $mediaEdit) {
+            throw InvalidConfigurationException::invalid('container', 'it needs a media_edit output');
+        }
+
+        if ($this->source->sourcePrefix() !== null && ! $edit) {
+            throw InvalidConfigurationException::invalid('source.prefix', 'an HLS replay source is read by a job that carries an edit()');
+        }
     }
 
     private function with(string $field, mixed $value): self

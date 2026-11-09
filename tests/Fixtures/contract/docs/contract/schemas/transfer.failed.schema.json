@@ -2,6 +2,29 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$ref": "#/$defs/TransferFailed",
   "$defs": {
+    "TransferAttempt": {
+      "type": "object",
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "What the attempt hit: dns_not_found, dns_error, connect_refused, connect_timeout, tls_error, timeout or transport for a request nothing answered, else the provider's own code or http_\u003cstatus\u003e. The set may grow; treat an unknown code as text."
+        },
+        "message": {
+          "type": "string",
+          "description": "One sentence naming the endpoint host only. It may change between builds; key on code."
+        },
+        "at": {
+          "type": "string",
+          "description": "When the node recorded the attempt."
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "at"
+      ],
+      "additionalProperties": false
+    },
     "TransferFailed": {
       "type": "object",
       "properties": {
@@ -92,7 +115,8 @@
             "job_audio",
             "job_thumbnails",
             "job_probe",
-            "job_transcript"
+            "job_transcript",
+            "job_media_edit"
           ]
         },
         "inventory_sha256": {
@@ -119,6 +143,17 @@
         },
         "message": {
           "type": "string"
+        },
+        "last_attempt": {
+          "description": "The cause of the object's latest failed attempt; null when the failure rests on no attempt (local evidence, or a budget found spent at restart before any recorded cause).",
+          "oneOf": [
+            {
+              "$ref": "#/$defs/TransferAttempt"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
@@ -140,7 +175,8 @@
         "target_id",
         "object_id",
         "code",
-        "message"
+        "message",
+        "last_attempt"
       ],
       "additionalProperties": false
     }

@@ -150,6 +150,17 @@ final readonly class PlanTarget
     }
 
     /**
+     * A `job_media_edit` target (tmesis `v0.10.0`): the one edited file at `$key`.
+     *
+     * @param  string|SignedDestination  $destination  a `destination_ref` configured on
+     *                                                 the node, or a signed bucket
+     */
+    public static function jobMediaEdit(string|SignedDestination $destination, string $key, ?string $id = null): self
+    {
+        return self::build(ArtifactStatus::KIND_JOB_MEDIA_EDIT, $destination, $key, null, null, $id);
+    }
+
+    /**
      * A target for a generation of `$kind` (`ArtifactStatus::kind()`), when the kind
      * arrives as data. `$location` is the prefix for a kind in
      * `ArtifactStatus::PREFIX_KINDS` and the key for every other; a master name on a

@@ -26,6 +26,7 @@
           "enum": [
             "fetch",
             "probe",
+            "edit",
             "audio",
             "encode",
             "package",
@@ -104,6 +105,7 @@
               "enum": [
                 "fetch",
                 "probe",
+                "edit",
                 "audio",
                 "encode",
                 "package",

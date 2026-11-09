@@ -6,6 +6,17 @@ use AlexHackney\Tmesis\Data\Artifacts\ArtifactStatus;
 use AlexHackney\Tmesis\Data\Artifacts\MasterInfo;
 use AlexHackney\Tmesis\Data\Fleet\FleetStreamState;
 use AlexHackney\Tmesis\Data\Hooks\HookRequest;
+use AlexHackney\Tmesis\Data\Jobs\EditCut;
+use AlexHackney\Tmesis\Data\Jobs\EditOperation;
+use AlexHackney\Tmesis\Data\Jobs\JobEditInput;
+use AlexHackney\Tmesis\Data\Jobs\JobStatus;
+use AlexHackney\Tmesis\Data\Jobs\Spec;
+use AlexHackney\Tmesis\Data\Node\Stats\IdentitySnapshot;
+use AlexHackney\Tmesis\Data\Node\Stats\IntegrationSnapshot;
+use AlexHackney\Tmesis\Data\Node\Stats\VideoEngineSnapshot;
+use AlexHackney\Tmesis\Data\Streams\Stats\DeliverySnapshot;
+use AlexHackney\Tmesis\Data\Streams\Stats\RecordingSnapshot;
+use AlexHackney\Tmesis\Data\Streams\Stats\SessionSnapshot;
 use AlexHackney\Tmesis\Data\Streams\StreamRecord;
 use AlexHackney\Tmesis\Data\Webhooks\NodeCapacity;
 use AlexHackney\Tmesis\Data\Webhooks\NodeJobsCapacity;
@@ -16,6 +27,7 @@ use AlexHackney\Tmesis\Events\CaptionSessionEnded;
 use AlexHackney\Tmesis\Events\JobsPaused;
 use AlexHackney\Tmesis\Events\JobsResumed;
 use AlexHackney\Tmesis\Events\NodeCapacityChanged;
+use AlexHackney\Tmesis\Events\NodeOnline;
 use AlexHackney\Tmesis\Events\RecordingCompleted;
 use AlexHackney\Tmesis\Events\StreamInputLost;
 use AlexHackney\Tmesis\Events\StreamPublished;
@@ -158,4 +170,61 @@ it('spells every NodeVideoEngine closed set on both carriers', function (string 
 
 it('spells every caption end reason, including provider switch', function (): void {
     expect(constantsWithPrefix(CaptionSessionEnded::class, 'REASON_'))->toBe(eventEnum('caption.session_ended', 'reason'));
+});
+
+it('spells the node.online config_source rule, defaults included (v0.10.0)', function (): void {
+    $sources = NodeOnline::CONFIG_SOURCES;
+    sort($sources);
+
+    expect(constantsWithPrefix(NodeOnline::class, 'CONFIG_SOURCE_'))->toBe(eventEnum('node.online', 'config_source'))
+        ->and($sources)->toBe(eventEnum('node.online', 'config_source'));
+});
+
+it('holds the job stages and the job media edit kind equal to the contract (v0.10.0)', function (): void {
+    $components = ContractDir::readJson(ContractDir::openapi())['components']['schemas'];
+
+    // `edit` sits between probe and audio, the order the node runs the stages in.
+    expect(JobStatus::STAGES)->toBe(['fetch', 'probe', 'edit', 'audio', 'encode', 'package', 'thumbnails', 'transcribe', 'upload', 'verify'])
+        ->and(JobStatus::STAGES)->toEqualCanonicalizing($components['JobError']['properties']['stage']['enum'])
+        ->and(JobStatus::STAGES)->toEqualCanonicalizing($components['JobProgressStatus']['properties']['stage']['enum'] ?? $components['JobProgressStatus']['properties']['stage']['oneOf'][0]['enum'])
+        ->and(ArtifactStatus::JOB_KINDS)->toContain(ArtifactStatus::KIND_JOB_MEDIA_EDIT)
+        ->and(ArtifactStatus::PREFIX_KINDS)->not->toContain(ArtifactStatus::KIND_JOB_MEDIA_EDIT)
+        ->and(Spec::OUTPUTS)->toContain(Spec::OUTPUT_MEDIA_EDIT)
+        ->and(EditOperation::OPS)->toEqualCanonicalizing($components['EditOperation']['properties']['op']['enum'])
+        ->and(EditOperation::CODECS)->toEqualCanonicalizing($components['EditOperation']['properties']['codec']['enum'])
+        ->and(EditOperation::FITS)->toEqualCanonicalizing($components['EditOperation']['properties']['fit']['enum'])
+        ->and(EditCut::MODES)->toEqualCanonicalizing($components['EditCut']['properties']['mode']['enum'])
+        ->and(Spec::CONTAINERS)->toEqualCanonicalizing($components['MediaEditRequest']['properties']['container']['enum'])
+        ->and(Spec::CONTAINERS)->toEqualCanonicalizing($components['Spec']['properties']['container']['enum'])
+        ->and(JobEditInput::KIND_FILE)->toBeIn($components['JobEditInput']['properties']['kind']['enum'])
+        ->and(JobEditInput::KIND_HLS)->toBeIn($components['JobEditInput']['properties']['kind']['enum']);
+});
+
+it('spells every closed set the stats and node blocks gained as enums (v0.10.0)', function (): void {
+    $components = ContractDir::readJson(ContractDir::openapi())['components']['schemas'];
+
+    $enum = static function (string $component, string $property) use ($components): array {
+        $values = $components[$component]['properties'][$property]['enum'];
+        sort($values);
+
+        return $values;
+    };
+
+    $sorted = static function (array $values): array {
+        sort($values);
+
+        return $values;
+    };
+
+    expect($sorted(SessionSnapshot::PROTOCOLS))->toBe($enum('SessionSnapshot', 'protocol'))
+        ->and($sorted(DeliverySnapshot::DRAIN_OUTCOMES))->toBe($enum('DeliverySnapshot', 'packager_drain_outcome'))
+        ->and($sorted(DeliverySnapshot::MODES))->toBe($enum('DeliverySnapshot', 'mode'))
+        ->and($sorted(RecordingSnapshot::ARTIFACTS))->toBe($enum('RecordingSnapshot', 'artifact'))
+        ->and($sorted(RecordingSnapshot::CONTAINERS))->toBe($enum('RecordingSnapshot', 'container'))
+        ->and($sorted(RecordingSnapshot::STATES))->toBe($enum('RecordingSnapshot', 'state'))
+        ->and($sorted(IdentitySnapshot::ROLES))->toBe($enum('IdentitySnapshot', 'role'))
+        ->and($sorted(IntegrationSnapshot::MODES))->toBe($enum('IntegrationSnapshot', 'mode'))
+        ->and($sorted(VideoEngineSnapshot::ACCELERATORS))->toBe($enum('VideoEngineSnapshot', 'accelerator'))
+        ->and($sorted(VideoEngineSnapshot::PLACEMENTS))->toBe($enum('VideoEngineSnapshot', 'placement'))
+        ->and($sorted(VideoEngineSnapshot::REQUESTED))->toBe($enum('VideoEngineSnapshot', 'requested'));
 });

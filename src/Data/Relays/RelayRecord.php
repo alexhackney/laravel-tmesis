@@ -63,6 +63,49 @@ final readonly class RelayRecord
         return $this->int('bytes_out');
     }
 
+    /**
+     * Provisioned destination ids folded into this one because they named its exact URL
+     * and feed (tmesis `v0.10.0`). Never null; empty when none.
+     *
+     * @return list<string>
+     */
+    public function aliases(): array
+    {
+        $out = [];
+
+        foreach (is_array($this->raw['aliases'] ?? null) ? $this->raw['aliases'] : [] as $alias) {
+            if (is_string($alias)) {
+                $out[] = $alias;
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * The totals of the destination's last finished session, equal to its
+     * `relay.stopped`; null until it has stopped once since the node process started
+     * (tmesis `v0.10.0`).
+     */
+    public function lastSession(): ?RelayLastSession
+    {
+        $value = $this->raw['last_session'] ?? null;
+
+        /** @var array<string, mixed>|null $value */
+        return is_array($value) ? RelayLastSession::fromArray($value) : null;
+    }
+
+    /**
+     * True only when a static (config file) destination was parked over the API while
+     * its config line still enables it (tmesis `v0.10.0`). `enabled()` is the EFFECTIVE
+     * value, so a parked leg reads `enabled() === false`, `parked() === true` and
+     * `state() === 'idle'`.
+     */
+    public function parked(): bool
+    {
+        return $this->bool('parked');
+    }
+
     public function droppedBytes(): int
     {
         return $this->int('dropped_bytes');
@@ -109,6 +152,10 @@ final readonly class RelayRecord
         return $this->string('source');
     }
 
+    /**
+     * One of the STATE_* constants. Since tmesis `v0.10.0` `idle` means "not publishing,
+     * OR disabled": read enabled() and parked() to tell which.
+     */
     public function state(): string
     {
         return $this->string('state');

@@ -233,6 +233,21 @@ final readonly class ObjectStatus
     }
 
     /**
+     * The cause of the most recent failed attempt, the latest across the object's parts
+     * and its own operations (tmesis `v0.10.0`). A terminal failure keeps it
+     * (`error()->code()` still says `attempts_exhausted`, this says what the last try
+     * hit) and a completed object has none. Null is normal, and is every row written
+     * before the node's journal migration 0034.
+     */
+    public function lastAttempt(): ?LastAttempt
+    {
+        $value = $this->raw['last_attempt'] ?? null;
+
+        /** @var array<string, mixed>|null $value */
+        return is_array($value) ? LastAttempt::fromArray($value) : null;
+    }
+
+    /**
      * The response as it arrived, unknown fields included.
      *
      * @return array<string, mixed>

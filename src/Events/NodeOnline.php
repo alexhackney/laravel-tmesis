@@ -24,6 +24,26 @@ class NodeOnline extends TmesisWebhookReceived
 {
     public const EVENT = 'node.online';
 
+    public const CONFIG_SOURCE_FLAG = 'flag';
+
+    public const CONFIG_SOURCE_ENV = 'env';
+
+    public const CONFIG_SOURCE_SEARCH_PATH = 'search_path';
+
+    public const CONFIG_SOURCE_DEFAULTS = 'defaults';
+
+    /**
+     * The closed set of `configSource()` (tmesis `v0.10.0` pins it in the contract).
+     *
+     * @var list<string>
+     */
+    public const CONFIG_SOURCES = [
+        self::CONFIG_SOURCE_FLAG,
+        self::CONFIG_SOURCE_ENV,
+        self::CONFIG_SOURCE_SEARCH_PATH,
+        self::CONFIG_SOURCE_DEFAULTS,
+    ];
+
     public function version(): string
     {
         return $this->string('version');
@@ -45,6 +65,10 @@ class NodeOnline extends TmesisWebhookReceived
         return $this->timestamp('started_at');
     }
 
+    /**
+     * The RULE that picked the config file (tmesis `v0.10.0`), never the file: one of
+     * CONFIG_SOURCES. `defaults` is a real answer for a zero-config box, never null.
+     */
     public function configSource(): string
     {
         return $this->string('config_source');

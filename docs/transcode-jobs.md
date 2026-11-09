@@ -97,6 +97,82 @@ you re-planned with `replaceJobTransferPlan()`. `cancelTranscodeJob()` supersede
 job's plans and discards its held generations, but a FINALIZED one still waits for a
 release like any other.
 
+## Cutting a clip (media edits)
+
+> **Experimental in tmesis `v0.10.0`.** The shapes here are stable; the node's behaviour is
+> field-gated until `v0.10.1`: the disk admission after an edit is an estimate, a whole
+> re-encode of a rotation-tagged (phone) clip comes out stretched, and a keyframe boundary
+> that is not an IDR frame is not proven safe to copy across. Do not depend on edits under
+> disk pressure.
+
+Since tmesis `v0.10.0` a transcoder cuts a clip out of a recording or an HLS replay:
+`createMediaEdit()` builds **one** job (one clip per job) and submits it, so everything
+above applies to it: status is `getTranscodeJob()`, cancel is `cancelTranscodeJob()`, the
+lifecycle is the `job.*` events (progress reports a stage named `edit`), and the clip is a
+`job_media_edit` generation you release like any other.
+
+```php
+use AlexHackney\Tmesis\Data\Jobs\EditSpec;
+use AlexHackney\Tmesis\Data\Jobs\JobSource;
+use AlexHackney\Tmesis\Data\Jobs\JobTarget;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditRequest;
+
+$clip = MediaEditRequest::make(
+    JobSource::prefix('vod', 'replays/941'),            // an HLS replay in the VOD bucket
+    EditSpec::make()
+        ->trim(120.0, 148.5)
+        ->crop(656, 0, 608, 1080)                       // a 9:16 window of a 1080p frame,
+        ->scale(1080, 1920)                             // then scaled: array order is run order
+        ->frameAccurate(),                              // omit for a fast keyframe stream copy
+    JobTarget::mediaEdit('clips', 'clips/941/highlight-1.mp4'),   // a told, complete key
+    idempotencyKey: 'clip-'.$clipRecord->id,            // minted from your record, reused on retry
+)->callbackUrl(route('tmesis.webhooks.receive'));
+
+$accepted = Tmesis::node('transcode-atl-04')->transcodeJobs()->createMediaEdit($clip);
+$accepted->created;   // true on 202; false on 200, the repeat of a known key (any state)
+```
+
+- **Operations.** `trim`, `concat` (up to 32 `EditRange`s, each optionally from its own
+  `JobSource`), `rewrap`, `extractAudio`, `crop` and `scale`. At most one range operation
+  (`trim` or `concat`) and it goes first; `crop` and `scale` run in array order; `rewrap`
+  excludes `crop`, `scale` and `extractAudio`, and `extractAudio` (which keeps no frames)
+  excludes `crop` and `scale`. The builder refuses these, the even-dimension rule and the
+  value ranges before any request. What only the probe can decide (a range past the end of
+  the source, a `crop` outside the frame) is the JOB's failure (`edit_range_out_of_source`,
+  `edit_unsupported`), never a refusal at submission.
+- **Container.** `mp4` by default; `mov`, `mkv`, `ts` for video, `m4a`, `mp3`, `ogg` for
+  `extractAudio` (omitted follows the codec).
+- **Sources.** `JobSource::prefix($destinationRef, $prefix, $rendition = null)` reads an HLS
+  replay (the highest-bandwidth variant unless a `rendition` names a rung directory),
+  `JobSource::destinationRef()` a file, and `JobSource::url()` only a URL that names a
+  configured destination's bucket. A replay that has not been copied to the bucket yet is
+  the job's `source_unreadable`, not a `404`.
+- **Non-destructive.** Every output key is told by you, and no output may equal, hold or sit
+  inside an input (`422 validation_failed`). Re-editing to the same key replaces the object
+  only after the earlier job has finished; while it is open the key is
+  `409 destination_busy`, and so is a second edit over the same replay and target from
+  another worker. Retry a `409` later rather than failing the clip.
+- **Where the cut landed.** `JobCompleted::edit()` (and `getTranscodeJob()->edit()`) is a
+  `JobEdit`: for each kept range, the requested and actual in and out points, the output
+  offset and how much was re-encoded (`reencodedGops()` 0 is a pure stream copy). A keyframe
+  cut snaps to the keyframe at or before the request, so show these numbers, not the ones you
+  sent.
+- **On `createTranscodeJob()` too.** `Spec::edit()` takes the range operations only and lets
+  the `media_edit` output sit beside `hls_ladder`, `transcript` and the rest, all reading the
+  one edited file; a frame operation, `rewrap` or `extractAudio` there is refused and names
+  `createMediaEdit()`. A `media_edit` output needs an `edit()`, and a `prefix` source needs
+  one too.
+- **Roles.** `409 role_unsupported` on an edge or a node with `jobs.enabled` off: send the
+  edit to a transcoder. A presigned URL in a range source is a credential like any other:
+  log `toRedactedArray()`.
+- **Swept jobs.** A job that ended more than 30 days ago with every generation deleted is
+  removed by the node, and `getTranscodeJob()` then throws `NotFoundException`: that is
+  "gone", not an outage.
+
+`FakeTmesis` runs an edit end to end: `completeJob($id)` reports every range landing as
+asked, and `completeJob($id, edit: ['ranges' => [...]])` lets a test choose where a cut
+snapped; `assertMediaEditSubmitted($key)` checks the recorded (redacted) request.
+
 ## Pausing jobs on a standalone box
 
 On a box that is not in a fleet (tmesis `v0.9.0`, API.md 9.12a):

@@ -9,12 +9,15 @@ use AlexHackney\Tmesis\Data\Artifacts\ObjectStatus;
 use AlexHackney\Tmesis\Data\Artifacts\PlanTarget;
 use AlexHackney\Tmesis\Data\Artifacts\SignedDestination;
 use AlexHackney\Tmesis\Data\ErrorResponse;
+use AlexHackney\Tmesis\Data\Jobs\EditCut;
 use AlexHackney\Tmesis\Data\Jobs\JobAccepted;
 use AlexHackney\Tmesis\Data\Jobs\JobCancelled;
 use AlexHackney\Tmesis\Data\Jobs\JobError;
 use AlexHackney\Tmesis\Data\Jobs\JobListPage;
 use AlexHackney\Tmesis\Data\Jobs\JobOutputReport;
 use AlexHackney\Tmesis\Data\Jobs\JobStatus;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditAccepted;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditRequest;
 use AlexHackney\Tmesis\Data\Jobs\Spec;
 use AlexHackney\Tmesis\Exceptions\ErrorMap;
 use AlexHackney\Tmesis\Exceptions\InvalidConfigurationException;
@@ -54,7 +57,7 @@ final class FakeJobLedger
     private const MAX_LIMIT = 1000;
 
     /**
-     * @var array<string, array{status: array<string, mixed>, targets: array<string, list<array<string, mixed>>>}>
+     * @var array<string, array{status: array<string, mixed>, targets: array<string, list<array<string, mixed>>>, edit: array<string, mixed>}>
      */
     private array $jobs = [];
 
@@ -76,14 +79,44 @@ final class FakeJobLedger
      */
     public function submit(Spec $spec, string $node): JobAccepted
     {
-        $existing = $this->keys[$spec->idempotencyKey()] ?? null;
+        [$status, $created] = $this->enqueue($spec->toRedactedArray(), $spec->idempotencyKey(), $node);
+
+        return JobAccepted::fromArray(self::accepted($status), created: $created);
+    }
+
+    /**
+     * The node's answer to an edit submission (`createMediaEdit`): one job of kind
+     * `media_edit`, `202` new or `200` for a known key. The edit is kept as submitted
+     * (redacted), and completing the job reports where each range landed.
+     */
+    public function submitEdit(MediaEditRequest $request, string $node): MediaEditAccepted
+    {
+        $body = $request->toRedactedArray();
+
+        /** @var array<string, array<string, mixed>> $targets */
+        $targets = $body['targets'];
+
+        $body['targets'] = array_map(static fn (array $target): array => [$target], $targets);
+        $body['edit'] = array_intersect_key($body, array_flip(['operations', 'cut']));
+
+        [$status, $created] = $this->enqueue($body, $request->idempotencyKey(), $node);
+
+        return MediaEditAccepted::fromArray(self::acceptedEdit($status, $this->jobs[(string) $status['id']]['edit'] ?? []), created: $created);
+    }
+
+    /**
+     * @param  array<string, mixed>  $body  the redacted request body, `targets` already output to list
+     * @return array{0: array<string, mixed>, 1: bool} the job's status row, and whether it is new
+     */
+    private function enqueue(array $body, string $key, string $node): array
+    {
+        $existing = $this->keys[$key] ?? null;
 
         if ($existing !== null) {
-            return JobAccepted::fromArray(self::accepted($this->jobs[$existing]['status']), created: false);
+            return [$this->jobs[$existing]['status'], false];
         }
 
         $id = 'job_'.Str::ulid();
-        $body = $spec->toRedactedArray();
 
         /** @var array<string, list<array<string, mixed>>> $targets */
         $targets = $body['targets'];
@@ -91,14 +124,18 @@ final class FakeJobLedger
         /** @var array<string, string> $labels */
         $labels = is_array($body['labels'] ?? null) ? $body['labels'] : [];
 
+        /** @var array<string, mixed> $edit */
+        $edit = is_array($body['edit'] ?? null) ? $body['edit'] : [];
+
         $this->jobs[$id] = [
+            'edit' => $edit,
             'targets' => self::keptTargets($targets),
             'status' => [
                 'id' => $id,
                 'state' => JobStatus::STATE_QUEUED,
                 'priority' => is_string($body['priority'] ?? null) ? $body['priority'] : JobStatus::PRIORITY_NORMAL,
                 'node' => $node,
-                'idempotency_key' => $spec->idempotencyKey(),
+                'idempotency_key' => $key,
                 'submitted_at' => FakeArtifactLedger::NOW,
                 'started_at' => null,
                 'completed_at' => null,
@@ -115,9 +152,9 @@ final class FakeJobLedger
             ],
         ];
 
-        $this->keys[$spec->idempotencyKey()] = $id;
+        $this->keys[$key] = $id;
 
-        return JobAccepted::fromArray(self::accepted($this->jobs[$id]['status']), created: true);
+        return [$this->jobs[$id]['status'], true];
     }
 
     public function get(string $id): JobStatus
@@ -207,10 +244,17 @@ final class FakeJobLedger
      * by kind (`['audio' => ['state' => 'failed', 'error' => [...]]]`); an output
      * reported failed gets no generation.
      *
+     * A job that carries an `edit` also reports it (`JobStatus::edit()`): one input for
+     * each distinct source and one range per kept range, each landing exactly where it
+     * was asked (a stream copy, `reencoded_gops` 0, unless the cut is frame accurate or
+     * a frame operation ran). `$edit` merges fields over that report, for a test that
+     * wants a keyframe snap: `['ranges' => [['actual_in_seconds' => 118.4, ...]]]`.
+     *
      * @param  array<string, array<string, mixed>>  $outputs
+     * @param  array<string, mixed>|null  $edit
      * @return array<string, string> output kind to its generation
      */
-    public function complete(string $id, array $outputs = []): array
+    public function complete(string $id, array $outputs = [], ?array $edit = null): array
     {
         $row = $this->row($id);
         $this->guardActive($row['status']);
@@ -250,9 +294,90 @@ final class FakeJobLedger
             'completed_at' => FakeArtifactLedger::NOW,
             'progress' => ['percent' => 100, 'stage' => null, 'speed' => 0, 'eta_seconds' => null],
             'outputs' => $reports,
-        ]);
+        ] + ($row['edit'] === [] ? [] : ['edit' => array_replace(self::editReport($row['edit'], $row['status']['source']), $edit ?? [])]));
 
         return $generations;
+    }
+
+    /**
+     * The `JobEdit` of a finished edit: every range landing as asked.
+     *
+     * @param  array<string, mixed>  $edit  the submitted operations and cut, redacted
+     * @param  array<string, mixed>  $source  the job's source as reported
+     * @return array<string, mixed>
+     */
+    private static function editReport(array $edit, array $source): array
+    {
+        $cut = is_array($edit['cut'] ?? null) && is_string($edit['cut']['mode'] ?? null) ? $edit['cut']['mode'] : EditCut::MODE_KEYFRAME;
+        $operations = is_array($edit['operations'] ?? null) ? $edit['operations'] : [];
+
+        $whole = false;
+        $spans = [];
+
+        foreach ($operations as $operation) {
+            if (! is_array($operation)) {
+                continue;
+            }
+
+            $op = $operation['op'] ?? null;
+
+            if ($op === 'trim') {
+                $spans[] = [$source, (float) $operation['in_seconds'], (float) $operation['out_seconds']];
+            } elseif ($op === 'concat' && is_array($operation['ranges'] ?? null)) {
+                foreach ($operation['ranges'] as $range) {
+                    $spans[] = [is_array($range['source'] ?? null) ? $range['source'] : $source, (float) $range['in_seconds'], (float) $range['out_seconds']];
+                }
+            } elseif (in_array($op, ['crop', 'scale'], true)) {
+                $whole = true;
+            }
+        }
+
+        $inputs = [];
+        $ranges = [];
+        $offset = 0.0;
+
+        foreach ($spans as [$input, $in, $out]) {
+            $location = self::inputLocation($input);
+            $index = array_search($location, array_column($inputs, 'location'), true);
+
+            if ($index === false) {
+                $index = count($inputs);
+                $inputs[] = ['kind' => isset($input['prefix']) ? 'hls' : 'file', 'location' => $location];
+            }
+
+            $ranges[] = [
+                'input' => $index,
+                'requested_in_seconds' => $in,
+                'actual_in_seconds' => $in,
+                'requested_out_seconds' => $out,
+                'actual_out_seconds' => $out,
+                'output_offset_seconds' => $offset,
+                'reencoded_gops' => ($whole || $cut === EditCut::MODE_FRAME_ACCURATE) ? 2 : 0,
+                'reencoded_whole' => $whole,
+            ];
+
+            $offset += $out - $in;
+        }
+
+        if ($inputs === []) {
+            $inputs[] = ['kind' => isset($source['prefix']) ? 'hls' : 'file', 'location' => self::inputLocation($source)];
+        }
+
+        return ['request' => $edit + ['cut' => ['mode' => $cut]], 'mode' => $cut, 'inputs' => $inputs, 'ranges' => $ranges];
+    }
+
+    /**
+     * `s3://<bucket>/<key or prefix>`, the node's form, never a credential or a query.
+     *
+     * @param  array<string, mixed>  $source
+     */
+    private static function inputLocation(array $source): string
+    {
+        if (isset($source['url']) && is_string($source['url'])) {
+            return $source['url'];
+        }
+
+        return 's3://'.(string) ($source['destination_ref'] ?? '').'/'.(string) ($source['key'] ?? $source['prefix'] ?? '');
     }
 
     /**
@@ -460,7 +585,7 @@ final class FakeJobLedger
     }
 
     /**
-     * @return array{status: array<string, mixed>, targets: array<string, list<array<string, mixed>>>}
+     * @return array{status: array<string, mixed>, targets: array<string, list<array<string, mixed>>>, edit: array<string, mixed>}
      */
     private function row(string $id): array
     {
@@ -474,6 +599,23 @@ final class FakeJobLedger
     private static function accepted(array $status): array
     {
         return array_intersect_key($status, array_flip(['id', 'state', 'priority', 'submitted_at', 'idempotency_key']));
+    }
+
+    /**
+     * The `MediaEditAccepted` body: the job's acceptance plus its kind, cut and the
+     * operations as submitted.
+     *
+     * @param  array<string, mixed>  $status
+     * @param  array<string, mixed>  $edit
+     * @return array<string, mixed>
+     */
+    private static function acceptedEdit(array $status, array $edit): array
+    {
+        return self::accepted($status) + [
+            'kind' => MediaEditAccepted::KIND,
+            'cut' => is_array($edit['cut'] ?? null) ? $edit['cut'] : ['mode' => EditCut::MODE_KEYFRAME],
+            'operations' => is_array($edit['operations'] ?? null) ? $edit['operations'] : [],
+        ];
     }
 
     /**

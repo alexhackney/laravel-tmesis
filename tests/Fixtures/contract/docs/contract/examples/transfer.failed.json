@@ -20,5 +20,6 @@
   "target_id": "01J8ZCK8T4N2QWX6VM3RKB9PD8",
   "object_id": "01J8ZCK9T4N2QWX6VM3RKB9PD8",
   "code": "attempts_exhausted",
-  "message": "The transfer reported attempts_exhausted"
+  "message": "The transfer reported attempts_exhausted",
+  "last_attempt": null
 }

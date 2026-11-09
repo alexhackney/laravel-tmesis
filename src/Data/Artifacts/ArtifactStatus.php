@@ -49,7 +49,13 @@ final readonly class ArtifactStatus
     public const KIND_JOB_PROBE = 'job_probe';
 
     /**
-     * The six kinds of a transcode job's generations (tmesis `v0.6.0`), one per output.
+     * An edit job's one edited file (tmesis `v0.10.0`): a single-file (KEY) generation.
+     */
+    public const KIND_JOB_MEDIA_EDIT = 'job_media_edit';
+
+    /**
+     * The seven kinds of a transcode job's generations (tmesis `v0.6.0`, `job_media_edit`
+     * since `v0.10.0`), one per output.
      *
      * @var list<string>
      */
@@ -60,6 +66,7 @@ final readonly class ArtifactStatus
         self::KIND_JOB_THUMBNAILS,
         self::KIND_JOB_TRANSCRIPT,
         self::KIND_JOB_PROBE,
+        self::KIND_JOB_MEDIA_EDIT,
     ];
 
     /** @var list<string> */
@@ -73,6 +80,7 @@ final readonly class ArtifactStatus
         self::KIND_JOB_THUMBNAILS,
         self::KIND_JOB_TRANSCRIPT,
         self::KIND_JOB_PROBE,
+        self::KIND_JOB_MEDIA_EDIT,
     ];
 
     /**

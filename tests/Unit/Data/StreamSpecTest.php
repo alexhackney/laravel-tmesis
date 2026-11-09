@@ -262,6 +262,11 @@ it('sends a null provider as JSON null, which is the node\'s configured provider
         ->toBe('{"captions":{"provider":null}}');
 });
 
+it('sends a null enabled as JSON null, which clears the override back to the node default', function (): void {
+    expect(json_encode(StreamSpec::make()->captionsEnabled(null)->toArray()))
+        ->toBe('{"captions":{"enabled":null}}');
+});
+
 it('accepts an empty languages list, which is the node default, as a JSON array', function (): void {
     expect(json_encode(StreamSpec::make()->captionsLanguages([])->toArray()))
         ->toBe('{"captions":{"languages":[]}}');

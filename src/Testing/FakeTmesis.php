@@ -345,7 +345,11 @@ class FakeTmesis implements TmesisClientInterface
         foreach ($relays as $relay) {
             // Redacted on the way in, so the fake cannot hold a credential even if a
             // test hands it one.
-            $records[] = $relay instanceof RelayRecord ? $relay : RelayRecord::fromArray($relay);
+            // The v0.10.0 response schema requires these three keys, so a seeded array
+            // that leaves them out gets the idle values and the fake's output validates.
+            $records[] = $relay instanceof RelayRecord
+                ? $relay
+                : RelayRecord::fromArray($relay + ['aliases' => [], 'last_session' => null, 'parked' => false]);
         }
 
         $this->relays[$streamId] = $records;
@@ -1334,6 +1338,9 @@ class FakeTmesis implements TmesisClientInterface
             'reconnects' => 0,
             'feed' => $relay->feed() ?? RelayFeed::AUTO,
             'feed_resolved' => self::resolvedFeed($relay->feed() ?? RelayFeed::AUTO, $relay->enabled() ?? true),
+            'aliases' => [],
+            'last_session' => null,
+            'parked' => false,
         ]);
 
         $this->relays[$streamId][] = $record;
@@ -1354,7 +1361,14 @@ class FakeTmesis implements TmesisClientInterface
             $changes['url'] = $patch->redacted();
         }
 
-        if ($patch->enabled() !== null) {
+        if ($patch->enabled() !== null && $existing->source() === RelayRecord::SOURCE_STATIC) {
+            // tmesis v0.10.0: `enabled` parks or un-parks a config-file leg. `enabled` is
+            // the EFFECTIVE value, so a parked leg reads enabled:false, parked:true,
+            // state:idle, and lifting the park starts it again.
+            $changes['enabled'] = $patch->enabled();
+            $changes['parked'] = ! $patch->enabled();
+            $changes['state'] = $patch->enabled() ? RelayRecord::STATE_CONNECTING : RelayRecord::STATE_IDLE;
+        } elseif ($patch->enabled() !== null) {
             $changes['enabled'] = $patch->enabled();
             $changes['state'] = $patch->enabled() ? RelayRecord::STATE_CONNECTING : RelayRecord::STATE_STOPPED;
         }
@@ -1488,6 +1502,9 @@ class FakeTmesis implements TmesisClientInterface
                 'reconnects' => 0,
                 'feed' => $feed,
                 'feed_resolved' => self::resolvedFeed($feed, $enabled),
+                'aliases' => [],
+                'last_session' => null,
+                'parked' => false,
             ]);
         }
 
@@ -1673,12 +1690,17 @@ class FakeTmesis implements TmesisClientInterface
      * an output's report by kind; `['audio' => ['state' => 'failed', 'error' => [...]]]`
      * fails an optional output while the job completes.
      *
+     * A job that carries an `edit` (`createMediaEdit()`, or a Spec with `edit()`) also
+     * reports it on `job($id)->edit()`, every range landing as asked; `$edit` merges
+     * fields over that report (a keyframe snap: `['ranges' => [...]]`).
+     *
      * @param  array<string, array<string, mixed>>  $outputs
+     * @param  array<string, mixed>|null  $edit
      * @return array<string, string> output kind to its generation id
      */
-    public function completeJob(string $id, array $outputs = []): array
+    public function completeJob(string $id, array $outputs = [], ?array $edit = null): array
     {
-        return $this->jobLedger()->complete($id, $outputs);
+        return $this->jobLedger()->complete($id, $outputs, $edit);
     }
 
     /**
@@ -1774,6 +1796,28 @@ class FakeTmesis implements TmesisClientInterface
         );
 
         PHPUnit::assertNotEmpty($matches, "No matching transcode job was submitted under [{$idempotencyKey}].");
+
+        return $this;
+    }
+
+    /**
+     * Assert an edit was submitted through `createMediaEdit()` under `$idempotencyKey`.
+     * The callback receives the recorded body, `MediaEditRequest::toRedactedArray()`:
+     * never a presigned query string.
+     *
+     * @param  (callable(array<string, mixed>): bool)|null  $request
+     */
+    public function assertMediaEditSubmitted(string $idempotencyKey, ?callable $request = null): self
+    {
+        $matches = array_filter(
+            $this->calls,
+            static fn (array $call): bool => $call['operation'] === 'createMediaEdit'
+                && is_array($call['args']['edit'] ?? null)
+                && ($call['args']['edit']['idempotency_key'] ?? null) === $idempotencyKey
+                && ($request === null || $request($call['args']['edit'])),
+        );
+
+        PHPUnit::assertNotEmpty($matches, "No matching media edit was submitted under [{$idempotencyKey}].");
 
         return $this;
     }

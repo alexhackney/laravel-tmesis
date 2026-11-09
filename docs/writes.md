@@ -189,6 +189,18 @@ $relay->feedResolved();   // rung:720p while live; '' while idle, parked, or ref
 // A new feed on a running show REPLACES the destination: relay.stopped, then
 // relay.started with the new feed on RelayDestination::feed().
 $relays->updateRelay('show-2041-main', 'youtube', RelayPatch::make(feed: RelayFeed::ingest()));
+
+// Since tmesis v0.10.0 `enabled` also works on a destination the node's config file owns
+// (source: static), where it is the ONLY accepted field: false parks that one leg until
+// it is started again (it survives a rejoin, a new publish and a restart), true lifts the
+// park. An edge needs `tmesis update` first; an older node still answers 409.
+$parked = $relays->updateRelay('show-2041-main', 'static-0', RelayPatch::make(enabled: false));
+
+$parked->enabled();       // false: the EFFECTIVE value
+$parked->parked();        // true: only a static leg parked over the API
+$parked->state();         // idle, which now also means "disabled": read enabled() and parked()
+$parked->aliases();       // provisioned ids folded into this destination (same URL and feed)
+$parked->lastSession();   // RelayLastSession (bytes, drops, reconnects), null until it has stopped once
 ```
 
 # Preview grants

@@ -28,7 +28,8 @@ use Illuminate\Support\LazyCollection;
  * answers are the stream routes' own.
  *
  * Each requested output is its own generation (kinds `job_hls`, `job_mp4`,
- * `job_audio`, `job_thumbnails`, `job_transcript`, `job_probe`), finalized with a
+ * `job_audio`, `job_thumbnails`, `job_transcript`, `job_probe`, and since tmesis
+ * `v0.10.0` `job_media_edit`), finalized with a
  * frozen inventory, and the targets the Spec named for it are filed BY THE NODE as its
  * revision-1 plan, under the submitting credential. A caller re-plans with
  * replaceJobTransferPlan() only to change where it goes.

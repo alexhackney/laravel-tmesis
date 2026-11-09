@@ -126,7 +126,8 @@
               "job_audio",
               "job_thumbnails",
               "job_transcript",
-              "job_probe"
+              "job_probe",
+              "job_media_edit"
             ],
             "type": "string"
           },
@@ -1027,6 +1028,13 @@
             "type": "boolean"
           },
           "packager_drain_outcome": {
+            "description": "CLOSED set. How this stream's packager last ended, or empty while it is still running.",
+            "enum": [
+              "",
+              "clean",
+              "short_final",
+              "timeout"
+            ],
             "type": "string"
           },
           "renditions": {
@@ -1453,6 +1461,134 @@
         "required": [
           "reason",
           "count"
+        ],
+        "type": "object"
+      },
+      "EditCut": {
+        "additionalProperties": false,
+        "properties": {
+          "mode": {
+            "enum": [
+              "keyframe",
+              "frame_accurate"
+            ],
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode"
+        ],
+        "type": "object"
+      },
+      "EditOperation": {
+        "additionalProperties": false,
+        "properties": {
+          "codec": {
+            "description": "extract_audio: the audio codec. Omitted follows the container: m4a aac, mp3 mp3, ogg opus.",
+            "enum": [
+              "aac",
+              "mp3",
+              "opus"
+            ],
+            "type": "string"
+          },
+          "fit": {
+            "description": "scale: contain (default) keeps the aspect inside the box, cover fills it, stretch ignores the aspect.",
+            "enum": [
+              "contain",
+              "cover",
+              "stretch"
+            ],
+            "type": "string"
+          },
+          "height": {
+            "description": "crop and scale: even, >= 2.",
+            "type": "integer"
+          },
+          "in_seconds": {
+            "description": "trim: the range start, >= 0.",
+            "type": "number"
+          },
+          "kbps": {
+            "description": "extract_audio: 32 to 512. Omitted is 128.",
+            "type": "integer"
+          },
+          "op": {
+            "enum": [
+              "trim",
+              "concat",
+              "rewrap",
+              "extract_audio",
+              "crop",
+              "scale"
+            ],
+            "type": "string"
+          },
+          "out_seconds": {
+            "description": "trim: the range end, > in_seconds.",
+            "type": "number"
+          },
+          "ranges": {
+            "description": "concat: 1 to 32 ranges joined in order. Ranges of one source may not overlap.",
+            "items": {
+              "$ref": "#/components/schemas/EditRange"
+            },
+            "type": "array"
+          },
+          "width": {
+            "description": "crop and scale: even, >= 2.",
+            "type": "integer"
+          },
+          "x": {
+            "description": "crop: the left edge, >= 0.",
+            "type": "integer"
+          },
+          "y": {
+            "description": "crop: the top edge, >= 0.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "op"
+        ],
+        "type": "object"
+      },
+      "EditRange": {
+        "additionalProperties": false,
+        "properties": {
+          "in_seconds": {
+            "type": "number"
+          },
+          "out_seconds": {
+            "type": "number"
+          },
+          "source": {
+            "$ref": "#/components/schemas/JobSource"
+          }
+        },
+        "required": [
+          "in_seconds",
+          "out_seconds"
+        ],
+        "type": "object"
+      },
+      "EditSpec": {
+        "additionalProperties": false,
+        "properties": {
+          "cut": {
+            "$ref": "#/components/schemas/EditCut",
+            "description": "Omitted is {\"mode\": \"keyframe\"}."
+          },
+          "operations": {
+            "description": "Ordered, 1 to 32. At most one range operation (trim or concat), first; crop and scale run in array order; rewrap excludes crop, scale and extract_audio.",
+            "items": {
+              "$ref": "#/components/schemas/EditOperation"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "operations"
         ],
         "type": "object"
       },
@@ -2428,6 +2564,13 @@
             "type": "integer"
           },
           "role": {
+            "description": "CLOSED set. The node's role, the config's node.role.",
+            "enum": [
+              "edge",
+              "origin",
+              "transcoder",
+              "standalone"
+            ],
             "type": "string"
           },
           "started_at": {
@@ -2672,6 +2815,7 @@
         "additionalProperties": false,
         "properties": {
           "admission": {
+            "description": "CLOSED set. Whether this node admits new publishes and jobs: draining is in place with the process up, shutting_down is the SIGTERM drain.",
             "enum": [
               "open",
               "draining",
@@ -2717,6 +2861,11 @@
             "type": "array"
           },
           "mode": {
+            "description": "CLOSED set. simple: no fleet file. fleet: a fleet file names this node's control plane.",
+            "enum": [
+              "simple",
+              "fleet"
+            ],
             "type": "string"
           },
           "webhook_outbox_depth": {
@@ -2868,6 +3017,118 @@
         ],
         "type": "object"
       },
+      "JobEdit": {
+        "additionalProperties": false,
+        "properties": {
+          "inputs": {
+            "description": "Every distinct input, in first-use order; a range's input is an index into this list.",
+            "items": {
+              "$ref": "#/components/schemas/JobEditInput"
+            },
+            "type": "array"
+          },
+          "mode": {
+            "description": "The cut mode in effect.",
+            "enum": [
+              "keyframe",
+              "frame_accurate"
+            ],
+            "type": "string"
+          },
+          "ranges": {
+            "description": "One entry per kept range, in output order: where the cut points were asked for and where they landed.",
+            "items": {
+              "$ref": "#/components/schemas/JobEditRange"
+            },
+            "type": "array"
+          },
+          "request": {
+            "description": "The submitted edit, echoed: its operations and cut."
+          }
+        },
+        "required": [
+          "request",
+          "mode",
+          "inputs",
+          "ranges"
+        ],
+        "type": "object"
+      },
+      "JobEditInput": {
+        "additionalProperties": false,
+        "properties": {
+          "bytes": {
+            "description": "A file's size at the identity check; absent for an HLS input.",
+            "type": "integer"
+          },
+          "etag": {
+            "description": "A file's ETag at the identity check; absent for an HLS input.",
+            "type": "string"
+          },
+          "kind": {
+            "description": "file: one object; hls: a replay read from its prefix.",
+            "enum": [
+              "file",
+              "hls"
+            ],
+            "type": "string"
+          },
+          "location": {
+            "description": "s3://<bucket>/<key or prefix>; never a credential or a query string.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "location"
+        ],
+        "type": "object"
+      },
+      "JobEditRange": {
+        "additionalProperties": false,
+        "properties": {
+          "actual_in_seconds": {
+            "description": "Where the cut landed in the input: the previous keyframe for a keyframe cut.",
+            "type": "number"
+          },
+          "actual_out_seconds": {
+            "type": "number"
+          },
+          "input": {
+            "description": "Index into inputs.",
+            "type": "integer"
+          },
+          "output_offset_seconds": {
+            "description": "Where this range starts in the edited file.",
+            "type": "number"
+          },
+          "reencoded_gops": {
+            "description": "GOPs re-encoded at the range's edges; 0 for a pure stream copy.",
+            "type": "integer"
+          },
+          "reencoded_whole": {
+            "description": "Every kept frame was re-encoded (a frame operation, or inputs that cannot be joined by copy).",
+            "type": "boolean"
+          },
+          "requested_in_seconds": {
+            "type": "number"
+          },
+          "requested_out_seconds": {
+            "type": "number"
+          }
+        },
+        "required": [
+          "input",
+          "requested_in_seconds",
+          "actual_in_seconds",
+          "requested_out_seconds",
+          "actual_out_seconds",
+          "output_offset_seconds",
+          "reencoded_gops",
+          "reencoded_whole"
+        ],
+        "type": "object"
+      },
       "JobError": {
         "additionalProperties": false,
         "properties": {
@@ -2895,6 +3156,7 @@
             "enum": [
               "fetch",
               "probe",
+              "edit",
               "audio",
               "encode",
               "package",
@@ -2975,6 +3237,7 @@
                 "enum": [
                   "fetch",
                   "probe",
+                  "edit",
                   "audio",
                   "encode",
                   "package",
@@ -3101,7 +3364,8 @@
               "audio",
               "thumbnails",
               "probe",
-              "transcript"
+              "transcript",
+              "media_edit"
             ],
             "type": "string"
           },
@@ -3254,6 +3518,7 @@
                 "enum": [
                   "fetch",
                   "probe",
+                  "edit",
                   "audio",
                   "encode",
                   "package",
@@ -3319,11 +3584,19 @@
         "additionalProperties": false,
         "properties": {
           "destination_ref": {
-            "description": "A storage.destinations entry the node reads with that destination's credential profile. Requires key.",
+            "description": "A storage.destinations entry the node reads with that destination's credential profile. Requires key, or prefix on an edit.",
             "type": "string"
           },
           "key": {
-            "description": "The source object's key in that destination, bucket-relative.",
+            "description": "The source object's key in that destination, bucket-relative: a file (MP4 or any container ffprobe reads).",
+            "type": "string"
+          },
+          "prefix": {
+            "description": "An edit only: an HLS replay's bucket-relative prefix, read from <prefix>/playlist.m3u8. Requires destination_ref; excludes key.",
+            "type": "string"
+          },
+          "rendition": {
+            "description": "An edit only, with prefix: the variant to read, by its rung directory name. Omitted is the highest-BANDWIDTH video variant with its default audio.",
             "type": "string"
           },
           "upload_id": {
@@ -3331,7 +3604,7 @@
             "type": "string"
           },
           "url": {
-            "description": "An HTTPS URL the node can GET, presigned or public. Its query string is never echoed.",
+            "description": "An HTTPS URL the node can GET, presigned or public: a file. Its query string is never echoed. An edit accepts it only when it names a configured destination's bucket.",
             "type": "string"
           }
         },
@@ -3350,6 +3623,14 @@
           },
           "key": {
             "description": "The source object's key in that destination.",
+            "type": "string"
+          },
+          "prefix": {
+            "description": "An edit's HLS replay source: its bucket-relative prefix.",
+            "type": "string"
+          },
+          "rendition": {
+            "description": "An edit's HLS source: the variant asked for, by its rung directory.",
             "type": "string"
           },
           "url": {
@@ -3376,6 +3657,10 @@
                 "type": "null"
               }
             ]
+          },
+          "edit": {
+            "$ref": "#/components/schemas/JobEdit",
+            "description": "An edit job's EDL once the edit stage has run (API.md 9.11): the request echoed, the effective cut mode, every input, and per kept range where the cut landed. Read from the journal, so it outlives the work dir. Absent for a job without an edit."
           },
           "error": {
             "oneOf": [
@@ -3510,6 +3795,29 @@
         },
         "required": [
           "id"
+        ],
+        "type": "object"
+      },
+      "LastAttempt": {
+        "additionalProperties": false,
+        "properties": {
+          "at": {
+            "description": "When the node recorded the attempt.",
+            "type": "string"
+          },
+          "code": {
+            "description": "What the attempt hit: dns_not_found, dns_error, connect_refused, connect_timeout, tls_error, timeout or transport for a request nothing answered, else the provider's own code or http_<status>. The set may grow; treat an unknown code as text.",
+            "type": "string"
+          },
+          "message": {
+            "description": "One sentence naming the endpoint host only. It may change between builds; key on code.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message",
+          "at"
         ],
         "type": "object"
       },
@@ -4099,6 +4407,177 @@
         ],
         "type": "object"
       },
+      "MediaEditAccepted": {
+        "additionalProperties": false,
+        "properties": {
+          "cut": {
+            "$ref": "#/components/schemas/EditCut",
+            "description": "The cut mode in effect."
+          },
+          "id": {
+            "type": "string"
+          },
+          "idempotency_key": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "kind": {
+            "enum": [
+              "media_edit"
+            ],
+            "type": "string"
+          },
+          "operations": {
+            "description": "The operations as submitted.",
+            "items": {
+              "$ref": "#/components/schemas/EditOperation"
+            },
+            "type": "array"
+          },
+          "priority": {
+            "enum": [
+              "low",
+              "normal",
+              "high"
+            ],
+            "type": "string"
+          },
+          "state": {
+            "description": "queued for a new job; an idempotent repeat answers the existing job's state.",
+            "enum": [
+              "queued",
+              "claimed",
+              "running",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
+            "type": "string"
+          },
+          "submitted_at": {
+            "description": "RFC3339 UTC, docs/API.md section 4",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "state",
+          "priority",
+          "submitted_at",
+          "idempotency_key",
+          "kind",
+          "cut",
+          "operations"
+        ],
+        "type": "object"
+      },
+      "MediaEditRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "callback_url": {
+            "description": "Where this job's events are delivered. Omitted or null is the node's webhooks.url.",
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "container": {
+            "description": "The edited file's container: video mp4 (default), mov, mkv, ts; audio m4a, mp3, ogg (extract_audio requires an audio one, every other edit a video one).",
+            "enum": [
+              "mp4",
+              "mov",
+              "mkv",
+              "ts",
+              "m4a",
+              "mp3",
+              "ogg"
+            ],
+            "type": "string"
+          },
+          "cut": {
+            "$ref": "#/components/schemas/EditCut",
+            "description": "Omitted is {\"mode\": \"keyframe\"}."
+          },
+          "destination": {
+            "description": "REMOVED: replaced by targets. destination.origin answers 422 destination_not_supported; any other value answers 422 validation_failed."
+          },
+          "idempotency_key": {
+            "description": "API.md section 7: a repeat returns 200 with the existing job. At most 255 bytes.",
+            "type": "string"
+          },
+          "labels": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "description": "Opaque map echoed in every job event. At most 16 keys, 64-byte keys, 256-byte values.",
+            "type": "object"
+          },
+          "ladder": {
+            "description": "A ladder in encode.ladders. Required with targets.hls_ladder.",
+            "type": "string"
+          },
+          "operations": {
+            "description": "Ordered, 1 to 32 (9.13).",
+            "items": {
+              "$ref": "#/components/schemas/EditOperation"
+            },
+            "type": "array"
+          },
+          "priority": {
+            "description": "Orders the local queue; never preempts live work. Omitted is normal.",
+            "enum": [
+              "low",
+              "normal",
+              "high"
+            ],
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/JobSource",
+            "description": "The input: destination_ref with key (a file), destination_ref with prefix (an HLS replay, optional rendition), or url (a file, accepted only when it names a configured destination's bucket)."
+          },
+          "targets": {
+            "$ref": "#/components/schemas/MediaEditTargets"
+          },
+          "timeout_seconds": {
+            "description": "Running time allowed, 60 to 172800. Omitted is 21600.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "source",
+          "operations",
+          "targets"
+        ],
+        "type": "object"
+      },
+      "MediaEditTargets": {
+        "additionalProperties": false,
+        "properties": {
+          "hls_ladder": {
+            "$ref": "#/components/schemas/JobTarget",
+            "description": "Optional: a ladder of the edited file, a prefix target. Needs ladder."
+          },
+          "media_edit": {
+            "$ref": "#/components/schemas/JobTarget",
+            "description": "Required: where the edited file goes. A key target (destination_ref or signed, and the complete object key)."
+          }
+        },
+        "required": [
+          "media_edit"
+        ],
+        "type": "object"
+      },
       "NodeSnapshot": {
         "additionalProperties": false,
         "properties": {
@@ -4245,6 +4724,17 @@
           "id": {
             "type": "string"
           },
+          "last_attempt": {
+            "description": "The cause of the object's latest failed attempt, the latest of its parts' and its own operations'. Null until an attempt fails. A terminal failure keeps it (error.code then says attempts_exhausted, this says what the last try hit); a completed object has none.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LastAttempt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "multipart_upload_id": {
             "oneOf": [
               {
@@ -4363,7 +4853,8 @@
           "provider_checksum_type",
           "provider_version_id",
           "completed_at",
-          "error"
+          "error",
+          "last_attempt"
         ],
         "type": "object"
       },
@@ -4585,6 +5076,17 @@
               }
             ]
           },
+          "last_attempt": {
+            "description": "The cause of THIS part's latest failed attempt, the terminal one included. Null until an attempt fails, and null again once the part completes.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/LastAttempt"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "offset_bytes": {
             "type": "integer"
           },
@@ -4615,7 +5117,8 @@
           "attempts",
           "etag",
           "completed_at",
-          "error"
+          "error",
+          "last_attempt"
         ],
         "type": "object"
       },
@@ -4782,7 +5285,8 @@
               "job_audio",
               "job_thumbnails",
               "job_transcript",
-              "job_probe"
+              "job_probe",
+              "job_media_edit"
             ],
             "type": "string"
           },
@@ -4795,7 +5299,7 @@
             "type": "string"
           },
           "key": {
-            "description": "A one-file generation's complete bucket-relative object key (a recording, job_audio, job_probe). Its extension does not convert the container.",
+            "description": "A one-file generation's complete bucket-relative object key (a recording, job_audio, job_probe, job_media_edit). Its extension does not convert the container.",
             "type": "string"
           },
           "master_name": {
@@ -4837,7 +5341,8 @@
               "job_audio",
               "job_thumbnails",
               "job_transcript",
-              "job_probe"
+              "job_probe",
+              "job_media_edit"
             ],
             "type": "string"
           },
@@ -5197,12 +5702,23 @@
         "additionalProperties": false,
         "properties": {
           "artifact": {
+            "description": "CLOSED set. ingest is the insurance copy; master is the as-aired program.",
+            "enum": [
+              "ingest",
+              "master"
+            ],
             "type": "string"
           },
           "bytes_total": {
             "type": "integer"
           },
           "container": {
+            "description": "CLOSED set. The capture container this part was opened in.",
+            "enum": [
+              "fmp4",
+              "mpegts",
+              "flv"
+            ],
             "type": "string"
           },
           "dropped_bytes": {
@@ -5236,6 +5752,14 @@
             "type": "string"
           },
           "state": {
+            "description": "CLOSED set. The journal ledger's state for this part.",
+            "enum": [
+              "active",
+              "degraded",
+              "finalized",
+              "registered",
+              "failed"
+            ],
             "type": "string"
           }
         },
@@ -5296,6 +5820,34 @@
         ],
         "type": "object"
       },
+      "RelayLastSession": {
+        "additionalProperties": false,
+        "properties": {
+          "bytes_out": {
+            "description": "Bytes accepted for send over that session, as on relay.stopped.",
+            "type": "integer"
+          },
+          "dropped_bytes": {
+            "description": "Bytes dropped over that session.",
+            "type": "integer"
+          },
+          "ended_at": {
+            "description": "When the destination stopped, UTC.",
+            "type": "string"
+          },
+          "reconnects": {
+            "description": "Reconnects over that session.",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ended_at",
+          "bytes_out",
+          "dropped_bytes",
+          "reconnects"
+        ],
+        "type": "object"
+      },
       "RelayListResponse": {
         "additionalProperties": false,
         "properties": {
@@ -5315,7 +5867,7 @@
         "additionalProperties": false,
         "properties": {
           "enabled": {
-            "description": "Park (false) or start (true) the destination on the running show. Omitted or null leaves it.",
+            "description": "Park (false) or start (true) the destination on the running show. On a static (config file) destination this is the only field accepted: false parks that one leg until it is started again (it survives a rejoin, a new publish and a restart), true lifts the park, and url or feed answer 409 relay_immutable. Omitted or null leaves it.",
             "oneOf": [
               {
                 "type": "boolean"
@@ -5353,6 +5905,13 @@
       "RelayRecord": {
         "additionalProperties": false,
         "properties": {
+          "aliases": {
+            "description": "Provisioned destination ids folded into this destination because they named its exact URL and feed. Empty, never null, when none.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "bytes_out": {
             "type": "integer"
           },
@@ -5373,6 +5932,21 @@
           "id": {
             "type": "string"
           },
+          "last_session": {
+            "description": "What the destination sent when it last stopped, equal to the totals on its relay.stopped. Null until it has stopped once since this process started.",
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/RelayLastSession"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parked": {
+            "description": "True only when a static (config file) destination was parked over the API while its config line still enables it. Enabled is false beside it, and state reads idle. PATCH enabled:true lifts the park.",
+            "type": "boolean"
+          },
           "reconnects": {
             "type": "integer"
           },
@@ -5386,6 +5960,7 @@
             "type": "string"
           },
           "state": {
+            "description": "The destination's health. idle means not publishing, or disabled (enabled says which).",
             "enum": [
               "idle",
               "connecting",
@@ -5404,11 +5979,14 @@
           "id",
           "url",
           "enabled",
+          "parked",
           "source",
           "state",
           "bytes_out",
           "dropped_bytes",
           "reconnects",
+          "last_session",
+          "aliases",
           "feed",
           "feed_resolved"
         ],
@@ -5742,6 +6320,13 @@
             "type": "integer"
           },
           "protocol": {
+            "description": "CLOSED set. unknown until the session's protocol is reported; never a protocol the listener did not speak.",
+            "enum": [
+              "srt",
+              "rtmp",
+              "rtmps",
+              "unknown"
+            ],
             "type": "string"
           },
           "reconnects": {
@@ -5939,8 +6524,25 @@
               }
             ]
           },
+          "container": {
+            "description": "The media_edit output's container: video mp4 (default), mov, mkv, ts; audio m4a, mp3, ogg (extract_audio requires an audio one, every other edit a video one).",
+            "enum": [
+              "mp4",
+              "mov",
+              "mkv",
+              "ts",
+              "m4a",
+              "mp3",
+              "ogg"
+            ],
+            "type": "string"
+          },
           "destination": {
             "description": "REMOVED: replaced by targets. destination.origin answers 422 destination_not_supported; any other value answers 422 validation_failed."
+          },
+          "edit": {
+            "$ref": "#/components/schemas/EditSpec",
+            "description": "Operations over the source (API.md 9.13). On this route only range operations (trim, concat) and cut are accepted; the others answer 422 naming /api/v1/media/edits. Every output then reads the one edited file."
           },
           "idempotency_key": {
             "description": "API.md section 7: a repeat returns 200 with the existing job, a completed one included. At most 255 bytes.",
@@ -5961,7 +6563,7 @@
             "$ref": "#/components/schemas/MP4Opts"
           },
           "outputs": {
-            "description": "One or more of hls_ladder, mp4, audio, thumbnails, probe, transcript, each at most once. storyboard and bif answer 422 output_not_supported naming E8, channel_ready naming E4.",
+            "description": "One or more of hls_ladder, mp4, audio, thumbnails, probe, transcript, media_edit, each at most once. media_edit is the edited clip: POST /api/v1/media/edits always produces it, and this route accepts it beside an edit of range operations (trim, concat). It needs edit. storyboard and bif answer 422 output_not_supported naming M8, channel_ready naming M8.",
             "items": {
               "type": "string"
             },
@@ -6876,6 +7478,12 @@
         "additionalProperties": false,
         "properties": {
           "accelerator": {
+            "description": "CLOSED set. Both Intel targets (Arc and Quick Sync) are qsv: they are the same encoder and differ in placement.",
+            "enum": [
+              "none",
+              "nvenc",
+              "qsv"
+            ],
             "type": "string"
           },
           "device": {
@@ -6888,6 +7496,13 @@
             "type": "boolean"
           },
           "placement": {
+            "description": "CLOSED set. Where the device sits. unknown is a real answer and never a default.",
+            "enum": [
+              "none",
+              "discrete",
+              "integrated",
+              "unknown"
+            ],
             "type": "string"
           },
           "preset": {
@@ -6897,6 +7512,13 @@
             "type": "string"
           },
           "requested": {
+            "description": "CLOSED set. The config value: auto, or the pinned encoder (encode.video_encoder for video_engine, jobs.video_encoder for jobs_video_engine).",
+            "enum": [
+              "auto",
+              "libx264",
+              "h264_nvenc",
+              "h264_qsv"
+            ],
             "type": "string"
           },
           "usable": {
@@ -7401,7 +8023,88 @@
     "/api/v1/media/edits": {
       "post": {
         "operationId": "createMediaEdit",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MediaEditRequest"
+              }
+            }
+          },
+          "description": "The source, the operations, the cut mode, the container and the told targets of one clip.",
+          "required": true
+        },
         "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaEditAccepted"
+                }
+              }
+            },
+            "description": "An idempotent repeat: a job with this idempotency_key exists (in any state), and nothing new was queued.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaEditAccepted"
+                }
+              }
+            },
+            "description": "Queued by this request as one transcode job (kind media_edit). Location names the job: read it with GET /api/v1/transcode/jobs/{id} (its `edit` carries the EDL once the edit stage ran), cancel it with DELETE.",
+            "headers": {
+              "Location": {
+                "description": "The job's resource, /api/v1/transcode/jobs/{id}.",
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "bad_request: the body is empty, is not JSON, or could not be read to the end. A body that parses and is wrong is 422.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
           "401": {
             "content": {
               "application/json": {
@@ -7426,6 +8129,111 @@
               }
             }
           },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "role_unsupported: an edge, or a role with jobs.enabled off. destination_busy: a target overlaps a location another open job or a live stream on this node writes, or an input of another open edit; details name each overlap.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
+          "413": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "payload_too_large: the body is over 1 MiB. Only the size limit answers this.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
+          "415": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "unsupported_media_type: a Content-Type other than application/json. An absent header is accepted.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "validation_failed: a malformed field, a structural refusal of the edit (operation fields, shapes, ranges, the two container sets, more than 8 inputs) or an output that can write an input (the edit never modifies its source). source_not_supported: a url that names no configured destination's bucket (use destination_ref), or source.upload_id. destination_not_supported: a destination.origin. What only the probe can know fails the JOB instead (edit_range_out_of_source, edit_unsupported).",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "queue_full: jobs.max_queued jobs are already queued.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
           "501": {
             "content": {
               "application/json": {
@@ -7434,7 +8242,28 @@
                 }
               }
             },
-            "description": "In the v1 contract, not implemented by this build. error.milestone names when it lands.",
+            "description": "not_implemented: this build has no job runner.",
+            "headers": {
+              "X-Request-Id": {
+                "$ref": "#/components/headers/X-Request-Id"
+              },
+              "X-Tmesis-Node": {
+                "$ref": "#/components/headers/X-Tmesis-Node"
+              },
+              "X-Tmesis-Version": {
+                "$ref": "#/components/headers/X-Tmesis-Version"
+              }
+            }
+          },
+          "503": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            },
+            "description": "draining: the node is shutting down. encoder_unavailable: the pinned jobs video encoder is not usable on this box.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/X-Request-Id"
@@ -7469,8 +8298,7 @@
             }
           }
         },
-        "summary": "Trim, concat, rewrap, or crop; the response carries the effective EDL",
-        "x-tmesis-milestone": "M8"
+        "summary": "Trim, concat, rewrap, extract audio, crop or scale: an async smart-cut edit of one clip"
       }
     },
     "/api/v1/media/preview": {
@@ -13462,7 +14290,7 @@
                 }
               }
             },
-            "description": "Applied to the running show.",
+            "description": "Applied to the running show. A static destination parked this way reads enabled false, parked true, state idle until it is started again.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/X-Request-Id"
@@ -13549,7 +14377,7 @@
                 }
               }
             },
-            "description": "relay_immutable: this destination comes from the node config file. fleet_owned: this destination is owned by the fleet's desired state; change it there.",
+            "description": "relay_immutable: this destination comes from the node config file and the body names url or feed (only enabled may change on a static destination). fleet_owned: this destination is owned by the fleet's desired state; change it there.",
             "headers": {
               "X-Request-Id": {
                 "$ref": "#/components/headers/X-Request-Id"
@@ -13647,7 +14475,7 @@
             }
           }
         },
-        "summary": "Change a destination's URL, enabled state or feed; it takes effect live"
+        "summary": "Change a destination's URL, enabled state or feed; it takes effect live. On a static (config file) destination only enabled is accepted, and it parks or restarts that one leg"
       }
     },
     "/api/v1/streams/{id}/splice": {

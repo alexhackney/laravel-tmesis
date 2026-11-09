@@ -8,8 +8,9 @@ use AlexHackney\Tmesis\Exceptions\InvalidConfigurationException;
 
 /**
  * What a job reads. The openapi component JobSource (tmesis `v0.6.0`, `docs/API.md`
- * 9.10), Spec's `source`: exactly one of a configured destination plus its key, or an
- * HTTPS URL. The two constructors make "both" and "neither" unrepresentable.
+ * 9.10), Spec's `source`: exactly one of a configured destination plus its key, a
+ * configured destination plus an HLS replay prefix (tmesis `v0.10.0`, edits only), or
+ * an HTTPS URL. The three constructors make "both" and "neither" unrepresentable.
  *
  * `upload_id` is RESERVED at v1 (any value is `422 source_not_supported`) and is never
  * exposed. Whether the destination exists on the node is the node's `422`.
@@ -25,6 +26,8 @@ final readonly class JobSource
         private ?string $destinationRef,
         private ?string $key,
         private ?string $url,
+        private ?string $prefix = null,
+        private ?string $rendition = null,
     ) {}
 
     /**
@@ -43,6 +46,51 @@ final readonly class JobSource
         }
 
         return new self($destinationRef, $key, null);
+    }
+
+    /**
+     * An HLS replay in a configured destination (tmesis `v0.10.0`): its bucket-relative
+     * `$prefix`, read from `<prefix>/playlist.m3u8`. Only a job that carries an `edit`
+     * may read one (`422` otherwise). Excludes `key`.
+     *
+     * @param  string|null  $rendition  the variant by its rung directory; null is the
+     *                                  highest-BANDWIDTH video variant with its default audio
+     */
+    public static function prefix(string $destinationRef, string $prefix, ?string $rendition = null): self
+    {
+        if (trim($destinationRef) === '') {
+            throw InvalidConfigurationException::invalid('source.destination_ref', 'it must name a destination');
+        }
+
+        if ($prefix === '') {
+            throw InvalidConfigurationException::invalid('source.prefix', 'an HLS replay source needs its prefix');
+        }
+
+        if ($rendition === '') {
+            throw InvalidConfigurationException::invalid('source.rendition', 'it must name a rung directory, or be omitted');
+        }
+
+        return new self($destinationRef, null, null, $prefix, $rendition);
+    }
+
+    /**
+     * A source as the node echoed it back (an edit's ranges in `MediaEditAccepted`):
+     * read leniently, a URL rebuilt without its query string and userinfo.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    public static function fromArray(array $data): self
+    {
+        $string = static fn (string $key): ?string => isset($data[$key]) && is_string($data[$key]) ? $data[$key] : null;
+        $url = $string('url');
+
+        return new self(
+            $string('destination_ref'),
+            $string('key'),
+            $url === null ? null : self::redactUrl($url),
+            $string('prefix'),
+            $string('rendition'),
+        );
     }
 
     /**
@@ -76,6 +124,19 @@ final readonly class JobSource
     }
 
     /**
+     * The HLS replay prefix of a prefix() source; null otherwise.
+     */
+    public function sourcePrefix(): ?string
+    {
+        return $this->prefix;
+    }
+
+    public function rendition(): ?string
+    {
+        return $this->rendition;
+    }
+
+    /**
      * The URL as given, query string included: a credential when presigned.
      */
     public function sourceUrl(): ?string
@@ -92,6 +153,14 @@ final readonly class JobSource
     {
         if ($this->url !== null) {
             return ['url' => $this->url];
+        }
+
+        if ($this->prefix !== null) {
+            return array_filter([
+                'destination_ref' => (string) $this->destinationRef,
+                'prefix' => $this->prefix,
+                'rendition' => $this->rendition,
+            ], static fn (?string $value): bool => $value !== null);
         }
 
         return ['destination_ref' => (string) $this->destinationRef, 'key' => (string) $this->key];

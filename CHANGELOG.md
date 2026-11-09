@@ -5,6 +5,75 @@ All notable changes to `alexhackney/laravel-tmesis` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-11-09
+
+The tmesis `v0.10.0` contract (a MINOR: additions only; openapi md5
+`2fa511dd95928695ac472828a0b4a44a`, was `1803edecdd168b9a70adbcd65cb9253c`; thirteen
+contract files moved, `test/vectors/` and the role templates unchanged). Pinned to the
+tmesis `v0.10.0` tag once it exists. No field, route, enum value or event is removed or
+renamed, every new request field is optional and every new response field is optional or
+nullable, so a package pinned to `v0.9.7` keeps decoding every `v0.10.0` payload.
+
+### Added
+
+- **Experimental:** `TranscodeJobs::createMediaEdit()` (`POST /api/v1/media/edits`) and the
+  edit family. The shapes are stable, but the node's behaviour is field-gated until tmesis
+  `v0.10.1` (the disk admission after an edit is an estimate, a whole re-encode of a
+  rotation-tagged clip comes out stretched, a non-IDR keyframe boundary is not proven safe to
+  copy across), so do not depend on edits under disk pressure.
+- `TranscodeJobs::createMediaEdit()` (`POST /api/v1/media/edits`): trim, concat, rewrap,
+  extract audio, crop and scale as one job, one clip per job. The request is
+  `MediaEditRequest` (an `EditSpec`, a `JobTarget::mediaEdit()` key target, an optional
+  `hlsLadder()` with its ladder name, `container()`, `callbackUrl()`, `priority()`,
+  `labels()`, `timeoutSeconds()`, and a REQUIRED caller-minted `idempotency_key`), the answer
+  `MediaEditAccepted` (`created` is true on `202`, false on the idempotent `200`). Status,
+  cancel and the lifecycle are the existing job calls and `job.*` events, with a new stage
+  `edit`. The builders refuse client-side only what the node refuses without reading a
+  file: at most one range operation and it first, `rewrap` and `extract_audio` exclusions,
+  even dimensions, ranges and codec values, and the container that fits the edit.
+  `EditSpec`, `EditOperation`, `EditRange`, `EditCut`, `MediaEditTargets`.
+- Jobs: `Spec::edit()` (range operations only on a transcode job; the frame operations name
+  `createMediaEdit()`), `Spec::container()`, `Spec::OUTPUT_MEDIA_EDIT` with
+  `JobTarget::mediaEdit()` and `PlanTarget::jobMediaEdit()`, the `job_media_edit` generation
+  kind (`ArtifactStatus::KIND_JOB_MEDIA_EDIT`, a single-file KEY generation), stage `edit`
+  in `JobStatus::STAGES`, `JobSource::prefix()` (an HLS replay, optional `rendition`) with
+  `JobSourceReport::prefix()` and `rendition()`.
+- `JobStatus::edit()` and `JobCompleted::edit()` (`JobEdit`, `JobEditInput`, `JobEditRange`):
+  where each cut actually landed (a keyframe cut can run up to one GOP long at each end),
+  the inputs read, and how many GOPs were re-encoded.
+- A presigned URL in a range source is redacted in `toRedactedArray()` on `Spec`,
+  `MediaEditRequest` and `EditSpec`, like the top-level source, and `FakeTmesis` records
+  only the redacted form.
+- Relays: `RelayRecord::aliases()`, `lastSession()` (`RelayLastSession`) and `parked()`.
+  `RelayPatch::make(enabled: ...)` is now valid on a static (config file) leg, where it is
+  the only accepted field: `false` parks that leg, `true` lifts the park. An edge needs
+  `tmesis update` first.
+- Transfers: a nullable `last_attempt` (`LastAttempt`: `code`, `message`, `at`, with
+  `CODE_*` constants for the documented causes) on `ObjectStatus`, `PartStatus` and
+  `TransferFailed`. It is null on every row written before the node's journal migration
+  0034, and an unknown `code` is text.
+- Enum constants for the closed sets the contract now pins: `NodeOnline::CONFIG_SOURCES`,
+  `SessionSnapshot::PROTOCOLS`, `DeliverySnapshot::DRAIN_OUTCOMES` and `MODES`,
+  `RecordingSnapshot::ARTIFACTS`, `CONTAINERS` and `STATES`, `IdentitySnapshot::ROLES`,
+  `IntegrationSnapshot::MODES`, `VideoEngineSnapshot::ACCELERATORS` and `PLACEMENTS`.
+- `FakeTmesis`: `createMediaEdit()`, `completeJob(..., edit: [...])` to choose where a cut
+  landed, `assertMediaEditSubmitted()`, parking a static relay, and `last_attempt: null`,
+  `aliases`, `last_session` and `parked` on the records it hands back so its own output
+  validates against the new response schemas.
+
+### Changed
+
+- `RelayRecord::state()` `idle` now also means "disabled": read `enabled()` and `parked()`
+  to tell a parked or config-disabled leg from one waiting for a publisher.
+- A job that ended more than 30 days ago with every generation deleted is swept by the node,
+  and `getTranscodeJob()` then answers `404` (`NotFoundException`): treat it as "gone", not an
+  outage. An `idempotency_key` reused after the sweep creates a new job.
+- `RecordingSnapshot::container()` documents `fmp4` (the master's container), not `mp4`.
+- `StreamSpec::captionsEnabled()` takes `?bool`. `null` is sent as JSON `null`, which on a PATCH
+  clears the `captions.enabled` override back to the node's `transcription.captions_default`
+  (tmesis `v0.9.7`). Previously only `true` and `false` could be sent. Existing calls are
+  unchanged.
+
 ## [0.9.7] - 2026-11-01
 
 The tmesis `v0.9.7` contract. tmesis `v0.9.7` is a patch (additions only) that changes

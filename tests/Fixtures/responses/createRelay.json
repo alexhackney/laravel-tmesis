@@ -8,5 +8,8 @@
   "dropped_bytes": 0,
   "reconnects": 0,
   "feed": "auto",
-  "feed_resolved": "ingest"
+  "feed_resolved": "ingest",
+  "aliases": [],
+  "last_session": null,
+  "parked": false
 }

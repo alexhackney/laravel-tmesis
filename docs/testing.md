@@ -423,6 +423,15 @@ revision 1 and lands every object, returning the generation ids by output),
 `assertJobArtifactReleased($job, $generation)`. `artifactFinalizedForJob()` and
 `jobArtifactIdentity()` seed and describe a job generation directly. The fake models no
 ladders (an `mp4` output is one entry), no scheduling and no `destination_busy`.
+
+Media edits (`createMediaEdit()`) run the same way: `202` then `200` for a repeat of the
+key, `progressJob($id, 'edit', 40.0)`, and `completeJob($id)` finalizes the `media_edit`
+output as a `job_media_edit` generation and reports the edit (`job($id)->edit()`), every
+range landing exactly where it was asked. Pass `completeJob($id, edit: ['ranges' => [...]])`
+to choose where a cut snapped; `assertMediaEditSubmitted($key, fn (array $body) => ...)`
+checks the recorded request (`MediaEditRequest::toRedactedArray()`). The fake does not
+probe, so it never fails a job for a range past the end of a source: drive that with
+`failJob($id, 'edit_range_out_of_source', stage: 'edit')`.
 Release the revision the event proves, as the policy above does: a revision read just
 before the release would, if the plan was replaced in between, release a plan nobody
 saw copied (see "Routing and releasing artifacts").

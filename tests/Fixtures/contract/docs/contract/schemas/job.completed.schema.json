@@ -76,6 +76,10 @@
             }
           ]
         },
+        "edit": {
+          "$ref": "#/$defs/JobEdit",
+          "description": "An edit job's EDL (API.md 9.11); absent for a job without an edit."
+        },
         "labels": {
           "type": "object",
           "additionalProperties": {
@@ -103,6 +107,118 @@
       ],
       "additionalProperties": false
     },
+    "JobEdit": {
+      "type": "object",
+      "properties": {
+        "request": {
+          "description": "The submitted edit, echoed: its operations and cut."
+        },
+        "mode": {
+          "type": "string",
+          "description": "The cut mode in effect.",
+          "enum": [
+            "keyframe",
+            "frame_accurate"
+          ]
+        },
+        "inputs": {
+          "type": "array",
+          "description": "Every distinct input, in first-use order; a range's input is an index into this list.",
+          "items": {
+            "$ref": "#/$defs/JobEditInput"
+          }
+        },
+        "ranges": {
+          "type": "array",
+          "description": "One entry per kept range, in output order: where the cut points were asked for and where they landed.",
+          "items": {
+            "$ref": "#/$defs/JobEditRange"
+          }
+        }
+      },
+      "required": [
+        "request",
+        "mode",
+        "inputs",
+        "ranges"
+      ],
+      "additionalProperties": false
+    },
+    "JobEditInput": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "description": "file: one object; hls: a replay read from its prefix.",
+          "enum": [
+            "file",
+            "hls"
+          ]
+        },
+        "location": {
+          "type": "string",
+          "description": "s3://\u003cbucket\u003e/\u003ckey or prefix\u003e; never a credential or a query string."
+        },
+        "bytes": {
+          "type": "integer",
+          "description": "A file's size at the identity check; absent for an HLS input."
+        },
+        "etag": {
+          "type": "string",
+          "description": "A file's ETag at the identity check; absent for an HLS input."
+        }
+      },
+      "required": [
+        "kind",
+        "location"
+      ],
+      "additionalProperties": false
+    },
+    "JobEditRange": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "integer",
+          "description": "Index into inputs."
+        },
+        "requested_in_seconds": {
+          "type": "number"
+        },
+        "actual_in_seconds": {
+          "type": "number",
+          "description": "Where the cut landed in the input: the previous keyframe for a keyframe cut."
+        },
+        "requested_out_seconds": {
+          "type": "number"
+        },
+        "actual_out_seconds": {
+          "type": "number"
+        },
+        "output_offset_seconds": {
+          "type": "number",
+          "description": "Where this range starts in the edited file."
+        },
+        "reencoded_gops": {
+          "type": "integer",
+          "description": "GOPs re-encoded at the range's edges; 0 for a pure stream copy."
+        },
+        "reencoded_whole": {
+          "type": "boolean",
+          "description": "Every kept frame was re-encoded (a frame operation, or inputs that cannot be joined by copy)."
+        }
+      },
+      "required": [
+        "input",
+        "requested_in_seconds",
+        "actual_in_seconds",
+        "requested_out_seconds",
+        "actual_out_seconds",
+        "output_offset_seconds",
+        "reencoded_gops",
+        "reencoded_whole"
+      ],
+      "additionalProperties": false
+    },
     "JobError": {
       "type": "object",
       "properties": {
@@ -127,6 +243,7 @@
           "enum": [
             "fetch",
             "probe",
+            "edit",
             "audio",
             "encode",
             "package",
@@ -160,7 +277,8 @@
             "audio",
             "thumbnails",
             "probe",
-            "transcript"
+            "transcript",
+            "media_edit"
           ]
         },
         "generation": {
@@ -293,6 +411,14 @@
         "key": {
           "type": "string",
           "description": "The source object's key in that destination."
+        },
+        "prefix": {
+          "type": "string",
+          "description": "An edit's HLS replay source: its bucket-relative prefix."
+        },
+        "rendition": {
+          "type": "string",
+          "description": "An edit's HLS source: the variant asked for, by its rung directory."
         },
         "url": {
           "type": "string",

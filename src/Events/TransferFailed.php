@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AlexHackney\Tmesis\Events;
 
+use AlexHackney\Tmesis\Data\Artifacts\LastAttempt;
+
 /**
  * One transfer object reached its terminal `failed` state. A superseded revision's
  * abort records `failed` but is never announced.
@@ -78,5 +80,20 @@ class TransferFailed extends ArtifactEvent
     public function message(): string
     {
         return $this->string('message');
+    }
+
+    /**
+     * The cause of the most recent failed attempt (tmesis `v0.10.0`): what the last
+     * try hit, where `code()` says only that the budget is spent. Null when the failure
+     * rests on no attempt (local evidence, or a budget found spent at restart). The
+     * cause codes are constants on LastAttempt; the set may grow, so treat an unknown
+     * one as text.
+     */
+    public function lastAttempt(): ?LastAttempt
+    {
+        $value = $this->payload['last_attempt'] ?? null;
+
+        /** @var array<string, mixed>|null $value */
+        return is_array($value) ? LastAttempt::fromArray($value) : null;
     }
 }
