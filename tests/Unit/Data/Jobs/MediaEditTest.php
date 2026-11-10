@@ -274,7 +274,16 @@ it('refuses the edit rules a transcode job states on the request alone', functio
     'a container with no media edit output' => [fn () => Spec::make(JobSource::destinationRef('a', 'b'), 'k')->edit(EditSpec::make()->trim(0.0, 1.0))->container('mkv')->target(JobTarget::probe('c', 'p.json'))->toArray()],
     'a prefix source with no edit' => [fn () => Spec::make(JobSource::prefix('a', 'b'), 'k')->target(JobTarget::probe('c', 'p.json'))->toArray()],
     'an unknown container' => [fn () => Spec::make(JobSource::destinationRef('a', 'b'), 'k')->container('avi')],
+    'an audio container on the job route' => [fn () => Spec::make(JobSource::destinationRef('a', 'b'), 'k')->edit(EditSpec::make()->trim(0.0, 10.0))->target(JobTarget::mediaEdit('c', 'k.mp3'))->container('mp3')->toArray()],
 ]);
+
+it('keeps the fields a newer node sent through the EditSpec builders', function (): void {
+    $read = EditSpec::fromArray(['operations' => [['op' => 'trim', 'in' => 0, 'out' => 10]], 'future_field' => 'x']);
+
+    foreach ([$read->frameAccurate(), $read->keyframe(), $read->rewrap()] as $built) {
+        expect($built->toArray())->toHaveKey('future_field', 'x');
+    }
+});
 
 it('is a KEY target for the job_media_edit generation, never a prefix', function (): void {
     $target = JobTarget::mediaEdit('tsp-clips', 'clips/c1.mp4', '01J8ZCK7T4N2QWX6VM3RKB9PD8');

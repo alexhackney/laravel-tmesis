@@ -421,6 +421,12 @@ final readonly class Spec
             throw InvalidConfigurationException::invalid('container', 'it needs a media_edit output');
         }
 
+        // edit() refuses extract_audio on this route, so no edit a Spec carries can
+        // take an audio container (MediaEditRequest makes the same refusal).
+        if (in_array($this->fields['container'] ?? null, ['m4a', 'mp3', 'ogg'], true)) {
+            throw InvalidConfigurationException::invalid('container', 'only an extract_audio edit takes an audio container; use mp4, mov, mkv or ts');
+        }
+
         if ($this->source->sourcePrefix() !== null && ! $edit) {
             throw InvalidConfigurationException::invalid('source.prefix', 'an HLS replay source is read by a job that carries an edit()');
         }

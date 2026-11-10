@@ -118,7 +118,7 @@ final readonly class EditSpec
 
         self::guardShape($operations);
 
-        return new self($operations, $this->cut);
+        return new self($operations, $this->cut, $this->extra);
     }
 
     /**
@@ -127,7 +127,7 @@ final readonly class EditSpec
      */
     public function keyframe(): self
     {
-        return new self($this->operations, null);
+        return new self($this->operations, null, $this->extra);
     }
 
     /**
@@ -135,7 +135,7 @@ final readonly class EditSpec
      */
     public function frameAccurate(): self
     {
-        return new self($this->operations, EditCut::frameAccurate());
+        return new self($this->operations, EditCut::frameAccurate(), $this->extra);
     }
 
     public function cut(): EditCut
