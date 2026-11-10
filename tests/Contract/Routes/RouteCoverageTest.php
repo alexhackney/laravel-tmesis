@@ -224,7 +224,7 @@ it('wraps none of the local-only operations', function (): void {
     ]));
 });
 
-it('counts 56 wrapped, 4 off-listener, 2 local-only and 9 milestoned operations at this tag', function (): void {
+it('counts 57 wrapped, 4 off-listener, 2 local-only and 8 milestoned operations at this tag', function (): void {
     // The numbers are here so a change upstream is visible in the diff of this file
     // rather than only in a green run: the three lists above are derived, and a route
     // moving from one to another keeps them all satisfied.
@@ -242,11 +242,12 @@ it('counts 56 wrapped, 4 off-listener, 2 local-only and 9 milestoned operations 
     // 66" counts without the two WHEP OPTIONS preflights; the document has 68
     // operationIds.) 71 since v0.9.0: setTranscodePause, getTranscodePause and
     // clearTranscodePause, the told jobs pause on one new path, none local-only, all
-    // wrapped (56).
-    expect(implementedOperations())->toHaveCount(56)
+    // wrapped (56). Still 71 operations at v0.10.0: createMediaEdit was a 501 stub
+    // gated on M8 and went live, so 57 wrapped and 8 milestoned.
+    expect(implementedOperations())->toHaveCount(57)
         ->and(offListenerOperations())->toHaveCount(4)
         ->and(localOnlyOperations())->toBe(['armSealingDrain', 'leaveFleet'])
-        ->and(milestonedOperations())->toHaveCount(9)
+        ->and(milestonedOperations())->toHaveCount(8)
         ->and(contractOperations())->toHaveCount(71);
 
     // The three unwrapped classes are disjoint: an off-listener route is served today,

@@ -126,7 +126,14 @@
           "description": "RFC3339 UTC, docs/API.md section 4"
         },
         "config_source": {
-          "type": "string"
+          "type": "string",
+          "description": "CLOSED set: the RULE that picked the config file, never the file. defaults is a real answer for a zero-config box, never null.",
+          "enum": [
+            "flag",
+            "env",
+            "search_path",
+            "defaults"
+          ]
         },
         "orphans_reaped": {
           "type": "integer",

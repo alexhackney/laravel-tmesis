@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AlexHackney\Tmesis\Data\Artifacts\LastAttempt;
 use AlexHackney\Tmesis\Data\Fleet\EnrollRequest;
 use AlexHackney\Tmesis\Data\Fleet\FleetHeartbeatEvent;
 use AlexHackney\Tmesis\Data\Fleet\FleetNodeStats;
@@ -29,7 +30,7 @@ pest()->group('schemas-responses');
  * value as the PROVENANCE.md Tag row (decision D9); the tag string is written last,
  * together with the other tag sites, once tmesis has tagged.
  */
-const INVENTORY_MEASURED_AT = 'v0.9.3';
+const INVENTORY_MEASURED_AT = 'v0.10.0';
 
 /**
  * Schema `$defs` whose class does not carry the `$def`'s name.
@@ -51,6 +52,7 @@ const DEF_CLASS_DEVIATIONS = [
     'NodeStats' => FleetNodeStats::class,
     'StreamState' => FleetStreamState::class,
     'HeartbeatEvent' => FleetHeartbeatEvent::class,
+    'TransferAttempt' => LastAttempt::class,
 ];
 
 /**
@@ -387,8 +389,12 @@ it('models every component in the openapi document, response or request', functi
     // JobPauseResponse (classes of the same name) and JobPauseRequest
     // (REQUEST_COMPONENT_EMITTERS).
     // tmesis v0.9.1 (a0081e4) adds HealthTranscription; 138 still at the v0.9.2 tag
-    // (66bc00d), which added properties only.
-    expect($components)->toHaveCount(138)
+    // (66bc00d), which added properties only. 150 at the v0.10.0 tag: twelve components,
+    // each a class of the same name: the edit family (EditCut, EditOperation, EditRange,
+    // EditSpec, MediaEditRequest, MediaEditTargets, MediaEditAccepted) and JobEdit,
+    // JobEditInput and JobEditRange, plus LastAttempt (Data/Artifacts) and
+    // RelayLastSession (Data/Relays).
+    expect($components)->toHaveCount(150)
         ->and($localOnly)->toBe(['FleetLeaveRequest', 'FleetLeaveResponse', 'LeaveObligation', 'SealingDrainResponse']);
 });
 
@@ -507,9 +513,13 @@ it('models every schema $def, or declares it pending with the tag it was measure
     // v0.9.1 tag (a0081e4): resumed_after is a property, not a $def. Still 76 at the
     // v0.9.2 tag (66bc00d): the failover fields are properties too. Still 76 at the
     // v0.9.3 tag (235c821): sockets, rotations and the job provider are properties.
+    // 80 at the v0.10.0 tag: TransferAttempt, the `last_attempt` object in transfer.failed
+    // (the same shape as the component LastAttempt, DEF_CLASS_DEVIATIONS), and JobEdit,
+    // JobEditInput and JobEditRange in job.completed (classes of the same name); the
+    // enum changes are properties, not $defs.
     expect(TIER_TWO_PENDING)->toBe(['StreamLease'])
-        ->and(schemaDefs())->toHaveCount(76)
-        ->and(INVENTORY_MEASURED_AT)->toBe('v0.9.3');
+        ->and(schemaDefs())->toHaveCount(80)
+        ->and(INVENTORY_MEASURED_AT)->toBe('v0.10.0');
 });
 
 it('names a $def emitter only for a $def the schemas declare, with a written reason', function (): void {

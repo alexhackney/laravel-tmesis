@@ -315,11 +315,13 @@ final class FakeArtifactLedger
                     'etag' => '"'.substr(self::str($object, 'checksum_sha256'), 0, 32).'"',
                     'completed_at' => self::NOW,
                     'error' => null,
+                    'last_attempt' => null,
                 ]
                 : [
                     'state' => ObjectStatus::STATE_FAILED,
                     'completed_at' => null,
                     'error' => ['code' => $errorCode ?? 'attempts_exhausted', 'message' => 'failed in FakeTmesis'],
+                    'last_attempt' => null,
                 ]);
         }
 
@@ -1344,6 +1346,7 @@ final class FakeArtifactLedger
                 'provider_version_id' => null,
                 'completed_at' => null,
                 'error' => $waiting ? ['code' => 'authorization_missing', 'message' => 'Supply signed requests for this object'] : null,
+                'last_attempt' => null,
             ];
         }
 
@@ -1573,6 +1576,7 @@ final class FakeArtifactLedger
                 ['path' => 'transcript.vtt', 'publish_order' => InventoryEntry::ORDER_MEDIA],
             ],
             ArtifactStatus::KIND_JOB_PROBE => [['path' => 'probe.json', 'publish_order' => InventoryEntry::ORDER_MEDIA]],
+            ArtifactStatus::KIND_JOB_MEDIA_EDIT => [['path' => 'edit.mp4', 'publish_order' => InventoryEntry::ORDER_MEDIA]],
             default => [['path' => 'recording.ts', 'publish_order' => InventoryEntry::ORDER_MEDIA]],
         };
 

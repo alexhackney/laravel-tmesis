@@ -15,11 +15,14 @@ use AlexHackney\Tmesis\Data\Artifacts\ReleaseRequest;
 use AlexHackney\Tmesis\Data\Artifacts\SignedDestination;
 use AlexHackney\Tmesis\Data\Artifacts\SignedRequest;
 use AlexHackney\Tmesis\Data\Jobs\AudioOpts;
+use AlexHackney\Tmesis\Data\Jobs\EditRange;
+use AlexHackney\Tmesis\Data\Jobs\EditSpec;
 use AlexHackney\Tmesis\Data\Jobs\JobPauseRequest;
 use AlexHackney\Tmesis\Data\Jobs\JobSignedTarget;
 use AlexHackney\Tmesis\Data\Jobs\JobSource;
 use AlexHackney\Tmesis\Data\Jobs\JobStatus;
 use AlexHackney\Tmesis\Data\Jobs\JobTarget;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditRequest;
 use AlexHackney\Tmesis\Data\Jobs\MP4Opts;
 use AlexHackney\Tmesis\Data\Jobs\Spec;
 use AlexHackney\Tmesis\Data\Jobs\ThumbnailOpts;
@@ -317,6 +320,22 @@ function clientCalls(): array
             Spec::make(JobSource::url('https://uploads.example.net/abc.mov'), 'video-941-v1')->target(JobTarget::probe('tsp-media', 'videos/941/probe.json')),
         )],
         'createTranscodeJob every field' => ['createTranscodeJob', fn () => Tmesis::node()->transcodeJobs()->createTranscodeJob(representativeJob())],
+        // tmesis v0.10.0: an edit on the job route (range operations only) and the
+        // media edits route.
+        'createTranscodeJob edit' => ['createTranscodeJob', fn () => Tmesis::node()->transcodeJobs()->createTranscodeJob(
+            Spec::make(JobSource::prefix('tsp-vod', 'replays/941'), 'video-941-edit')
+                ->edit(EditSpec::make()->concat([EditRange::make(10.0, 20.0), EditRange::make(40.0, 50.5, JobSource::destinationRef('tsp-vod', 'replays/942.mp4'))])->frameAccurate())
+                ->container('mkv')
+                ->ladder('vod-1080p')
+                ->target(JobTarget::mediaEdit('tsp-clips', 'clips/941/edited.mkv'), JobTarget::hlsLadder('tsp-clips', 'clips/941/edited')),
+        )],
+        'createMediaEdit minimal' => ['createMediaEdit', fn () => Tmesis::node()->transcodeJobs()->createMediaEdit(
+            MediaEditRequest::make(JobSource::prefix('tsp-vod', 'replays/941'), EditSpec::make()->trim(120.0, 148.5), JobTarget::mediaEdit('tsp-clips', 'clips/941/c1.mp4'), 'clip-5521'),
+        )],
+        'createMediaEdit every field' => ['createMediaEdit', fn () => Tmesis::node()->transcodeJobs()->createMediaEdit(representativeEdit())],
+        'createMediaEdit extract audio' => ['createMediaEdit', fn () => Tmesis::node()->transcodeJobs()->createMediaEdit(
+            MediaEditRequest::make(JobSource::url('https://uploads.example.net/abc.mov?X-Amz-Signature=secret'), EditSpec::make()->trim(0.0, 60.0)->extractAudio('opus', 96), JobTarget::mediaEdit('tsp-clips', 'clips/941/c1.ogg'), 'clip-5522'),
+        )],
         'listTranscodeJobs bare' => ['listTranscodeJobs', fn () => Tmesis::node()->transcodeJobs()->listTranscodeJobs()],
         'listTranscodeJobs paged' => ['listTranscodeJobs', fn () => Tmesis::node()->transcodeJobs()->listTranscodeJobs('running', 50, 'opaque-cursor')],
         'getTranscodeJob' => ['getTranscodeJob', fn () => Tmesis::node()->transcodeJobs()->getTranscodeJob(LEG_JOB)],
@@ -765,14 +784,17 @@ it('is strict: every request component refuses a field it does not name', functi
 
     // Twenty since v0.5.0: the ten artifact request components joined. Thirty-two since
     // v0.8.0: MasterRequest, the told master's body, joined the v0.6.0 thirty-one.
-    // Thirty-three since v0.9.0: JobPauseRequest, the jobs pause body.
+    // Thirty-three since v0.9.0: JobPauseRequest, the jobs pause body. Thirty-nine since
+    // v0.10.0: the edit request, MediaEditRequest, and the five it reaches (EditCut,
+    // EditOperation, EditRange, EditSpec, MediaEditTargets).
     expect(array_keys($requestComponents))->toBe([
         'AudioOpts',
         'AuthorizationBundle', 'AuthorizationRequest', 'CaptionsSpec', 'CreateStreamRequest',
+        'EditCut', 'EditOperation', 'EditRange', 'EditSpec',
         'FallbackSpec',
         'IngestRecordingSpec', 'InitialAuthorization',
         'JobPauseRequest', 'JobSignedTarget', 'JobSource', 'JobTarget', 'MP4Opts',
-        'MarkerRequest', 'MasterRequest',
+        'MarkerRequest', 'MasterRequest', 'MediaEditRequest', 'MediaEditTargets',
         'OverrideRequest', 'PartAuthorization',
         'PlanRequest', 'PlanTarget',
         'PreviewGrantInput', 'PreviewGrantPatch',
@@ -807,6 +829,12 @@ it('is strict: every request component refuses a field it does not name', functi
         'JobTarget' => ['id' => 't'],
         'JobSignedTarget' => ['region' => 'us-east-1', 'bucket' => 'tsp-assets'],
         'JobPauseRequest' => JobPauseRequest::untilCleared('show: fight night 12')->toArray(),
+        'EditCut' => ['mode' => 'keyframe'],
+        'EditOperation' => ['op' => 'rewrap'],
+        'EditRange' => ['in_seconds' => 0, 'out_seconds' => 1],
+        'EditSpec' => ['operations' => []],
+        'MediaEditTargets' => ['media_edit' => ['id' => 't']],
+        'MediaEditRequest' => ['source' => new stdClass, 'operations' => [], 'targets' => ['media_edit' => ['id' => 't']]],
     ];
 
     $validator = SchemaValidator::forOpenApi();
@@ -933,6 +961,22 @@ function representativeJob(): Spec
         ->thumbnails(ThumbnailOpts::make(5, 320, 12, [0, 12.5], [50], 3))
         ->mp4(MP4Opts::make(['1080p', '720p']))
         ->transcript(TranscriptOpts::make('deepgram', 'en', ['vtt', 'json']));
+}
+
+function representativeEdit(): MediaEditRequest
+{
+    return MediaEditRequest::make(
+        JobSource::prefix('tsp-vod', 'replays/941', '720p'),
+        EditSpec::make()->trim(120.0, 148.5)->crop(656, 0, 608, 1080)->scale(1080, 1920, 'cover')->frameAccurate(),
+        JobTarget::mediaEdit('tsp-clips', 'clips/941/c1.mp4', '01J8ZCK7T4N2QWX6VM3RKB9PD8'),
+        'clip-5521',
+    )
+        ->hlsLadder(JobTarget::hlsLadder(JobSignedTarget::make('us-east-1', 'backup', 'https://s3.example.net', 'path', 64, 16), 'backup/clips/941'), 'vod-1080p')
+        ->container('mov')
+        ->callbackUrl('https://app.example.com/api/webhooks/tmesis')
+        ->priority('low')
+        ->labels(['clip_id' => '5521'])
+        ->timeoutSeconds(3600);
 }
 
 it('refuses nothing the job routes allow: the job state filter equals its enum, and every output and kind is the document\'s', function (): void {

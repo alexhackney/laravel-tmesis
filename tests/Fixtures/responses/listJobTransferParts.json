@@ -9,7 +9,8 @@
       "attempts": 1,
       "etag": "\"7ac66c0f148de9519b8bd264312c4d64\"",
       "completed_at": "2026-09-22T22:20:03.441Z",
-      "error": null
+      "error": null,
+      "last_attempt": null
     },
     {
       "part_number": 101,
@@ -23,7 +24,8 @@
       "error": {
         "code": "authorization_missing",
         "message": "Supply signed requests for the current multipart upload"
-      }
+      },
+      "last_attempt": null
     }
   ],
   "limit": 100,

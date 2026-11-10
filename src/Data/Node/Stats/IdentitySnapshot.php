@@ -12,6 +12,21 @@ use DateTimeImmutable;
  */
 final readonly class IdentitySnapshot
 {
+    public const ROLE_EDGE = 'edge';
+
+    public const ROLE_ORIGIN = 'origin';
+
+    public const ROLE_TRANSCODER = 'transcoder';
+
+    public const ROLE_STANDALONE = 'standalone';
+
+    /**
+     * The closed set of `role()` (tmesis `v0.10.0` pins it in the contract).
+     *
+     * @var list<string>
+     */
+    public const ROLES = [self::ROLE_EDGE, self::ROLE_ORIGIN, self::ROLE_TRANSCODER, self::ROLE_STANDALONE];
+
     /**
      * @param  array<string, mixed>  $raw
      */

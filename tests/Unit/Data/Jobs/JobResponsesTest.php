@@ -106,7 +106,7 @@ it('reads a failed job, terminal, with its whole error', function (): void {
         ->and($job->labels())->toBe([]);
 });
 
-it('gives a job generation the six job kinds, the prefix and key rule, and a nullable identity', function (): void {
+it('gives a job generation the seven job kinds, the prefix and key rule, and a nullable identity', function (): void {
     $status = ArtifactStatus::fromArray(['stream' => null, 'session' => null, 'session_epoch' => null, 'job_id' => 'job_1', 'kind' => 'job_mp4']);
     $stream = ArtifactStatus::fromArray(['stream' => 's', 'session' => 'x', 'session_epoch' => 3, 'job_id' => null, 'kind' => 'hls_sealed']);
 
@@ -116,13 +116,13 @@ it('gives a job generation the six job kinds, the prefix and key rule, and a nul
         ->and($status->sessionEpoch())->toBeNull()
         ->and($stream->isJobGeneration())->toBeFalse()
         ->and($stream->sessionEpoch())->toBe(3)
-        ->and(ArtifactStatus::JOB_KINDS)->toHaveCount(6)
-        ->and(ArtifactStatus::KINDS)->toHaveCount(9);
+        ->and(ArtifactStatus::JOB_KINDS)->toHaveCount(7)
+        ->and(ArtifactStatus::KINDS)->toHaveCount(10);
 
     $prefix = [
         PlanTarget::jobHls('d', 'p'), PlanTarget::jobMp4('d', 'p'), PlanTarget::jobThumbnails('d', 'p'), PlanTarget::jobTranscript('d', 'p'),
     ];
-    $key = [PlanTarget::jobAudio('d', 'k'), PlanTarget::jobProbe('d', 'k')];
+    $key = [PlanTarget::jobAudio('d', 'k'), PlanTarget::jobProbe('d', 'k'), PlanTarget::jobMediaEdit('d', 'k')];
 
     foreach ($prefix as $target) {
         expect($target->prefix())->toBe('p')->and($target->key())->toBeNull()

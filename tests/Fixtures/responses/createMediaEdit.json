@@ -1,0 +1,18 @@
+{
+  "id": "job_01J8ZCA2R7F3H9NQ4KTX8VD5YC",
+  "state": "queued",
+  "priority": "normal",
+  "submitted_at": "2026-11-08T19:31:12.044Z",
+  "idempotency_key": "clip-5521",
+  "kind": "media_edit",
+  "cut": {
+    "mode": "keyframe"
+  },
+  "operations": [
+    {
+      "op": "trim",
+      "in_seconds": 120,
+      "out_seconds": 148.5
+    }
+  ]
+}

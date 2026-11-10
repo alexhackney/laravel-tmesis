@@ -12,6 +12,8 @@ use AlexHackney\Tmesis\Data\Jobs\JobListPage;
 use AlexHackney\Tmesis\Data\Jobs\JobPauseRequest;
 use AlexHackney\Tmesis\Data\Jobs\JobPauseResponse;
 use AlexHackney\Tmesis\Data\Jobs\JobStatus;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditAccepted;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditRequest;
 use AlexHackney\Tmesis\Data\Jobs\Spec;
 use AlexHackney\Tmesis\Exceptions\InvalidConfigurationException;
 use Illuminate\Support\LazyCollection;
@@ -67,6 +69,38 @@ class TranscodeJobs
     }
 
     /**
+     * **EXPERIMENTAL in tmesis `v0.10.0`.** The shapes are stable; the behaviour is
+     * field-gated until `v0.10.1`: the disk admission after an edit is an estimate, a
+     * whole re-encode of a rotation-tagged (phone) clip comes out stretched, and a
+     * keyframe boundary that is not an IDR frame is not proven safe to copy across. Do
+     * not depend on edits under disk pressure.
+     *
+     * POST /api/v1/media/edits (tmesis `v0.10.0`, `docs/API.md` 9.13): cut one clip as
+     * ONE transcode job (trim, concat, rewrap, extract audio, crop and scale). Status
+     * is `getTranscodeJob($id)`, cancel is `cancelTranscodeJob($id)`, and the lifecycle
+     * is the `job.*` events (stage `edit`); `JobCompleted::edit()` says where the cut
+     * landed.
+     *
+     * `202` queued it (`MediaEditAccepted::$created` true); `200` is the idempotent
+     * repeat of a known `idempotency_key` (in any state), which queued nothing, so a
+     * timed-out submit is retried with the SAME request.
+     *
+     * `409 role_unsupported` (an edge, or `jobs.enabled` off) and `409
+     * destination_busy` (a target overlaps what another open job or live stream writes,
+     * or an input of another open edit: retry later, do not fail the clip), `422`
+     * `validation_failed` / `source_not_supported` / `destination_not_supported` with
+     * every problem at once, `429 queue_full`, `503 draining` or `encoder_unavailable`,
+     * and `501` on a build with no job runner. There is no `404`: a missing source
+     * fails the JOB `source_unreadable`.
+     */
+    public function createMediaEdit(MediaEditRequest $request): MediaEditAccepted
+    {
+        $result = $this->transport->post('/api/v1/media/edits', $request->toArray());
+
+        return MediaEditAccepted::fromArray($result->body, created: $result->status === 202);
+    }
+
+    /**
      * GET /api/v1/transcode/jobs: one page of this node's job SUMMARIES,
      * `(submitted_at, id)` descending, terminal ones included.
      *
@@ -104,6 +138,11 @@ class TranscodeJobs
     /**
      * GET /api/v1/transcode/jobs/:id: the job as its row stands, every output with its
      * generation. `404` for no such job on this node.
+     *
+     * A job that ended more than 30 days ago with EVERY generation deleted is swept
+     * hourly (tmesis `v0.10.0`), and then answers `404 not_found` (NotFoundException):
+     * a polling UI treats a 404 on a known id as "gone", not as an outage. An
+     * `idempotency_key` reused after the sweep creates a NEW job.
      */
     public function getTranscodeJob(string $id): JobStatus
     {

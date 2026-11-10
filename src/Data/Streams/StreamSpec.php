@@ -377,8 +377,13 @@ final readonly class StreamSpec
      * The node refuses it with `422` on a node whose `transcription.provider` is
      * `none`, on a passthrough node, and on a ladder with no `audio_only` rung. Those
      * are node facts and are never mirrored here.
+     *
+     * Since tmesis `v0.9.7` an omitted or `null` value is the node's
+     * `transcription.captions_default`, not always off. On a create, leave it unset (or
+     * pass `null`) to take that default. On a PATCH, unset keeps the stored value and
+     * `null` clears the override back to the default. `false` is off on every node.
      */
-    public function captionsEnabled(bool $enabled): self
+    public function captionsEnabled(?bool $enabled): self
     {
         return $this->withPath('captions.enabled', $enabled);
     }

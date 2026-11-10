@@ -188,8 +188,9 @@ it('reads a block from a node before v0.9.0 as usable with no request', function
 });
 
 it('holds the requested set equal to the enum the health block closes it to', function (): void {
-    // The stats component types `requested` as a bare string; health and node.online
-    // carry the enum, and the three are the same config value.
-    expect(v090NodeStatsComponent('VideoEngineSnapshot')['properties']['requested'])->not->toHaveKey('enum')
+    // The stats component typed `requested` as a bare string until tmesis v0.10.0 closed
+    // it to the enum health and node.online already carried: the three are the same
+    // config value, and all three now say so.
+    expect(v090NodeStatsComponent('VideoEngineSnapshot')['properties']['requested']['enum'])->toEqualCanonicalizing(VideoEngineSnapshot::REQUESTED)
         ->and(VideoEngineSnapshot::REQUESTED)->toEqualCanonicalizing(v090NodeStatsComponent('HealthVideoEngine')['properties']['requested']['enum']);
 });

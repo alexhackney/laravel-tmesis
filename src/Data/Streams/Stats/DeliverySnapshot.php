@@ -23,6 +23,26 @@ final readonly class DeliverySnapshot
 
     public const MODE_BOTH = 'both';
 
+    /** @var list<string> */
+    public const MODES = [self::MODE_BUCKET, self::MODE_ORIGIN, self::MODE_BOTH];
+
+    /** The packager is still running: no drain has ended yet. */
+    public const DRAIN_RUNNING = '';
+
+    public const DRAIN_CLEAN = 'clean';
+
+    public const DRAIN_SHORT_FINAL = 'short_final';
+
+    public const DRAIN_TIMEOUT = 'timeout';
+
+    /**
+     * The closed set of `packagerDrainOutcome()` (tmesis `v0.10.0` pins it in the
+     * contract); the empty string while the packager runs.
+     *
+     * @var list<string>
+     */
+    public const DRAIN_OUTCOMES = [self::DRAIN_RUNNING, self::DRAIN_CLEAN, self::DRAIN_SHORT_FINAL, self::DRAIN_TIMEOUT];
+
     /**
      * @param  array<string, mixed>  $raw
      */

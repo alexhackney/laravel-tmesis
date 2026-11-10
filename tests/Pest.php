@@ -15,6 +15,7 @@ use AlexHackney\Tmesis\Data\Jobs\JobCancelled;
 use AlexHackney\Tmesis\Data\Jobs\JobListPage;
 use AlexHackney\Tmesis\Data\Jobs\JobPauseResponse;
 use AlexHackney\Tmesis\Data\Jobs\JobStatus;
+use AlexHackney\Tmesis\Data\Jobs\MediaEditAccepted;
 use AlexHackney\Tmesis\Data\Markers\MarkerListResponse;
 use AlexHackney\Tmesis\Data\Markers\MarkerResponse;
 use AlexHackney\Tmesis\Data\Node\DoctorResponse;
@@ -109,6 +110,8 @@ function wrappedOperations(): array
         'listMarkers' => ['listMarkers', MarkerListResponse::class],
         // tmesis v0.6.0 (LTWB): transcode jobs and their generations.
         'createTranscodeJob' => ['createTranscodeJob', JobAccepted::class],
+        // tmesis v0.10.0: the media edit route, ONE job answered as MediaEditAccepted.
+        'createMediaEdit' => ['createMediaEdit', MediaEditAccepted::class],
         'listTranscodeJobs' => ['listTranscodeJobs', JobListPage::class],
         'getTranscodeJob' => ['getTranscodeJob', JobStatus::class],
         'cancelTranscodeJob' => ['cancelTranscodeJob', JobCancelled::class],

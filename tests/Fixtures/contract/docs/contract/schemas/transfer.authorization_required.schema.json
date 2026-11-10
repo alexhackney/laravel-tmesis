@@ -92,7 +92,8 @@
             "job_audio",
             "job_thumbnails",
             "job_probe",
-            "job_transcript"
+            "job_transcript",
+            "job_media_edit"
           ]
         },
         "inventory_sha256": {

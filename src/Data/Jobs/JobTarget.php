@@ -109,6 +109,19 @@ final readonly class JobTarget
         return self::build(Spec::OUTPUT_PROBE, $destination, $key, null, null, $id);
     }
 
+    /**
+     * The one edited file at `$key` (tmesis `v0.10.0`), a KEY target like `audio()` and
+     * `probe()`. It may not equal, hold or sit inside an input of the job: the node
+     * refuses that `422` at acceptance.
+     *
+     * @param  string|JobSignedTarget  $destination  a `destination_ref` configured on
+     *                                               the node, or a signed bucket
+     */
+    public static function mediaEdit(string|JobSignedTarget $destination, string $key, ?string $id = null): self
+    {
+        return self::build(Spec::OUTPUT_MEDIA_EDIT, $destination, $key, null, null, $id);
+    }
+
     private static function build(string $output, string|JobSignedTarget $destination, ?string $key, ?string $prefix, ?string $masterName, ?string $id): self
     {
         return new self(

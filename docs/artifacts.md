@@ -39,6 +39,17 @@ $decision = $artifacts->releaseArtifact(
 $decision->recorded;   // true on the first answer (202), false for an exact duplicate (200)
 ```
 
+**Why a transfer failed** (tmesis `v0.10.0`). `error()->code()` on a failed object, and
+`TransferFailed::code()`, say that the retry budget is spent (`attempts_exhausted`);
+`lastAttempt()` says what the last try actually hit: a `LastAttempt` with a `code`
+(`dns_not_found`, `dns_error`, `connect_refused`, `connect_timeout`, `tls_error`,
+`timeout`, `transport`, else the provider's own code or `http_<status>`, so treat an unknown
+code as text), a one-sentence `message` naming the endpoint host only, and the time. It is
+on `ObjectStatus`, `PartStatus` and `TransferFailed`, and it is null when there is no
+attempt to name: a completed object, a part that has since completed, a failure resting on
+local evidence, and every row the node wrote before its journal migration 0034. Key on the
+`code`; the message may change between builds.
+
 Release the revision your own evidence covers (the `PlanStatus` you wrote, or the
 `plan_revision` of the `transfer.completed` you acted on, through
 `ReleaseRequest::make()`), never one read just before: if someone else replaced the

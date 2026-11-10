@@ -85,6 +85,19 @@ final readonly class PartStatus
     }
 
     /**
+     * The part's own most recent failed attempt (tmesis `v0.10.0`); null again once the
+     * part completes, and null on every row written before the node's journal
+     * migration 0034.
+     */
+    public function lastAttempt(): ?LastAttempt
+    {
+        $value = $this->raw['last_attempt'] ?? null;
+
+        /** @var array<string, mixed>|null $value */
+        return is_array($value) ? LastAttempt::fromArray($value) : null;
+    }
+
+    /**
      * The response as it arrived, unknown fields included.
      *
      * @return array<string, mixed>

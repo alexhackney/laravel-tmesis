@@ -23,5 +23,6 @@
   "provider_checksum_type": null,
   "provider_version_id": null,
   "completed_at": null,
-  "error": null
+  "error": null,
+  "last_attempt": null
 }

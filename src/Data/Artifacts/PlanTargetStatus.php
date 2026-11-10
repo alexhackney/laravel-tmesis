@@ -102,7 +102,7 @@ final readonly class PlanTargetStatus
 
     /**
      * The told object key of a one-file target (a recording, `job_audio`,
-     * `job_probe`); null for a prefix target.
+     * `job_probe`, `job_media_edit`); null for a prefix target.
      */
     public function key(): ?string
     {

@@ -26,6 +26,7 @@
           "enum": [
             "fetch",
             "probe",
+            "edit",
             "audio",
             "encode",
             "package",
@@ -59,7 +60,8 @@
             "audio",
             "thumbnails",
             "probe",
-            "transcript"
+            "transcript",
+            "media_edit"
           ]
         },
         "generation": {
@@ -195,6 +197,7 @@
           "enum": [
             "fetch",
             "probe",
+            "edit",
             "audio",
             "encode",
             "package",

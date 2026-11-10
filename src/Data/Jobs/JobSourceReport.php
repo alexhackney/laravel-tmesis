@@ -44,6 +44,24 @@ final readonly class JobSourceReport
     }
 
     /**
+     * The HLS replay's bucket-relative prefix of an edit's source (tmesis `v0.10.0`);
+     * null for a file or URL source.
+     */
+    public function prefix(): ?string
+    {
+        return $this->nullableString('prefix');
+    }
+
+    /**
+     * The variant an HLS replay source named by its rung directory; null when the
+     * highest-BANDWIDTH video variant was taken, or for any other source.
+     */
+    public function rendition(): ?string
+    {
+        return $this->nullableString('rendition');
+    }
+
+    /**
      * The HTTPS source with its query string removed; null for a destination source.
      */
     public function url(): ?string

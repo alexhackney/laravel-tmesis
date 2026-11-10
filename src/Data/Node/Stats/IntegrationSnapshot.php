@@ -15,6 +15,17 @@ use DateTimeImmutable;
  */
 final readonly class IntegrationSnapshot
 {
+    public const MODE_SIMPLE = 'simple';
+
+    public const MODE_FLEET = 'fleet';
+
+    /**
+     * The closed set of `mode()` (tmesis `v0.10.0` pins it in the contract).
+     *
+     * @var list<string>
+     */
+    public const MODES = [self::MODE_SIMPLE, self::MODE_FLEET];
+
     /**
      * @param  array<string, mixed>  $raw
      */

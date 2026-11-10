@@ -24,8 +24,22 @@ final readonly class VideoEngineSnapshot
     public const REQUESTED_H264_QSV = 'h264_qsv';
 
     /**
-     * The config values a pin can name. The stats component types `requested` as a
-     * bare string; this is the enum the health and `node.online` blocks close it to.
+     * The closed set of `accelerator()` (tmesis `v0.10.0` pins it in the contract).
+     *
+     * @var list<string>
+     */
+    public const ACCELERATORS = ['none', 'nvenc', 'qsv'];
+
+    /**
+     * The closed set of `placement()` (tmesis `v0.10.0` pins it in the contract).
+     *
+     * @var list<string>
+     */
+    public const PLACEMENTS = ['none', 'discrete', 'integrated', 'unknown'];
+
+    /**
+     * The config values a pin can name: the enum the stats component (since tmesis
+     * `v0.10.0`), the health block and `node.online` all close `requested` to.
      *
      * @var list<string>
      */

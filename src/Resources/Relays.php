@@ -75,6 +75,14 @@ class Relays
      * unpark it.
      *
      * A partial document, like every PATCH here: an omitted field is not mentioned.
+     *
+     * On a destination the node's config file owns (`source: static`), `enabled` is the
+     * ONLY accepted field (tmesis `v0.10.0`): `false` parks that one leg until it is
+     * started again (it survives a rejoin, a new publish and a restart), `true` lifts
+     * the park and starts it on the running show. `url` or `feed`, alone or beside
+     * `enabled`, stays `409 relay_immutable`, and a fleet leg stays `409 fleet_owned`.
+     * An edge needs `tmesis update` first: an older node still answers 409 for a static
+     * leg. A parked leg reads `enabled: false`, `parked: true`, `state: idle`.
      */
     public function updateRelay(string $streamId, string $relayId, RelayPatch $patch): RelayRecord
     {
